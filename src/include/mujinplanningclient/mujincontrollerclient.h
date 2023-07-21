@@ -32,9 +32,9 @@
 #endif
 
 #if defined(__GNUC__)
-#define MUJINCLIENT_DEPRECATED __attribute__((deprecated))
+#define MUJINPLANNINGCLIENT_DEPRECATED __attribute__((deprecated))
 #else
-#define MUJINCLIENT_DEPRECATED
+#define MUJINPLANNINGCLIENT_DEPRECATED
 #endif
 
 #include <cmath>
@@ -64,7 +64,7 @@
 #include <mujinplanningclient/mujindefinitions.h>
 
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 typedef mujin::Transform Transform;
 
@@ -75,21 +75,21 @@ enum TaskResourceOptions
 
 typedef double Real;
 
-class MUJINCLIENT_API WebResource
+class MUJINPLANNINGCLIENT_API WebResource
 {
 public:
     WebResource(PlanningClientPtr controller, const std::string& resourcename, const std::string& pk);
     virtual ~WebResource() {
     }
 
-    inline PlanningClientPtr GetController() const {
-        return __controller;
+    inline WebstackClientPtr GetWebstackClient() const {
+        return _webstackClient;
     }
     inline const std::string& GetResourceName() const {
-        return __resourcename;
+        return _resourcename;
     }
     inline const std::string& GetPrimaryKey() const {
-        return __pk;
+        return _pk;
     }
 
     /// \brief gets an attribute of this web resource
@@ -101,22 +101,22 @@ public:
     }
 
     /// \brief sets an attribute of this web resource
-    virtual void Set(const std::string& field, const std::string& newvalue, double timeout = 5.0);
+    void Set(const std::string& field, const std::string& newvalue, double timeout = 5.0);
 
     /// \brief sets an attribute of this web resource
-    virtual void SetJSON(const std::string& json, double timeout = 5.0);
+    void SetJSON(const std::string& json, double timeout = 5.0);
 
     /// \brief delete the resource and all its child resources
-    virtual void Delete(double timeout = 5.0);
+    void Delete(double timeout = 5.0);
 
     /// \brief copy the resource and all its child resources to a new name
-    virtual void Copy(const std::string& newname, int options, double timeout = 5.0);
+    void Copy(const std::string& newname, int options, double timeout = 5.0);
 
 private:
-    virtual void GetWrap(rapidjson::Document& pt, const std::string& field, double timeout = 5.0);
+    void GetWrap(rapidjson::Document& pt, const std::string& field, double timeout = 5.0);
 
-    PlanningClientPtr __controller;
-    std::string __resourcename, __pk;
+    WebstackClientPtr _webstackClient;
+    std::string _resourcename, _pk;
 };
 
 struct SensorData {
@@ -142,6 +142,15 @@ public:
     std::vector<Real> extra_parameters;
 };
 
+
+/// Margins of the container to be cropped (or enlarged if negative), in order to define 3D container region under (calibration & shape) uncertainty - for pointcloud processing.
+struct CropContainerMarginsXYZXYZ
+{
+    double minMargins[3]; ///< XYZ of how much to crop from min margins (value > 0 means crop inside)
+    double maxMargins[3]; ///< XYZ of how much to crop from min margins (value > 0 means crop inside)
+};
+typedef boost::shared_ptr<CropContainerMarginsXYZXYZ> CropContainerMarginsXYZXYZPtr;
+
 enum MinViableRegionRegistrationMode : uint8_t {
     MVRRM_None = 0, ///< registration without touching
     MVRRM_Lift = 1,
@@ -149,16 +158,16 @@ enum MinViableRegionRegistrationMode : uint8_t {
     MVRRM_PerpendicularDrag = 3,
 };
 
-class MUJINCLIENT_API BinPickingTaskResource : public WebResource
+class MUJINPLANNINGCLIENT_API BinPickingTaskResource : public WebResource
 {
 public:
     BinPickingTaskResource(PlanningClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
     virtual ~BinPickingTaskResource();
 
     /// \brief Get all the transforms the results are storing. Depending on the optimization, can be more than just the robot
-    virtual void GetEnvironmentState(EnvironmentState& envstate);
+    void GetEnvironmentState(EnvironmentState& envstate);
 
-    struct MUJINCLIENT_API DetectedObject
+    struct MUJINPLANNINGCLIENT_API DetectedObject
     {
         std::string name;             // "name": "detectionresutl_1"
         std::string object_uri;       // "object_uri": "mujin:/box0.mujin.dae"
@@ -169,13 +178,13 @@ public:
         bool isPickable; ///< whether the object is pickable
     };
 
-    struct MUJINCLIENT_API ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultBase
     {
         virtual void Parse(const rapidjson::Value& pt) = 0;
     };
     typedef boost::shared_ptr<ResultBase> ResultBasePtr;
 
-    struct MUJINCLIENT_API ResultGetBinpickingState : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultGetBinpickingState : public ResultBase
     {
         /// \brief holds published occlusion results of camera and container pairs
         struct OcclusionResult
@@ -286,7 +295,7 @@ public:
         std::vector<mujin::PickPlaceHistoryItem> pickPlaceHistoryItems; ///< history of pick/place actions that occurred in planning. Events should be sorted in the order they happen, ie event [0] happens before event [1], meaning event[0].eventTimeStampUS is before event[1].eventTimeStampUS
     };
 
-    struct MUJINCLIENT_API ResultOBB : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultOBB : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         bool operator!=(const ResultOBB& other) const {
@@ -304,7 +313,7 @@ public:
         std::vector<Real> quaternion; // the quaternion
     };
 
-    struct MUJINCLIENT_API ResultInstObjectInfo : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultInstObjectInfo : public ResultBase
     {
         virtual ~ResultInstObjectInfo();
         void Parse(const rapidjson::Value& pt);
@@ -315,8 +324,9 @@ public:
         rapidjson::Document rIkParams; ///< for every object, dict of serialized ikparams
     };
 
-    struct MUJINCLIENT_API ResultGetInstObjectAndSensorInfo : public ResultBase
-    {
+    struct MUJINPLANNINGCLIENT_API ResultGetInstObjectAndSensorInfo : public ResultBase
+    {MUJIN_LOGGER("mujin.planningclientcpp.binpickingtask");
+
         virtual ~ResultGetInstObjectAndSensorInfo();
         void Parse(const rapidjson::Value& pt);
         std::map<std::string, std::string> muri;
@@ -328,12 +338,22 @@ public:
         std::map<std::string, boost::shared_ptr<rapidjson::Document> > mrGeometryInfos; ///< for every object, list of all the geometry infos
     };
 
+    struct MUJINCLIENT_API AddPointOffsetInfo
+    {
+        AddPointOffsetInfo() : zOffsetAtBottom(0), zOffsetAtTop(0) {
+        }
+        double zOffsetAtBottom;
+        double zOffsetAtTop;
+    };
+    typedef boost::shared_ptr<AddPointOffsetInfo> AddPointOffsetInfoPtr;
+
+
     /** \brief Initializes binpicking task.
         \param commandtimeout seconds until this command times out
         \param userinfo json string user info, such as locale
         \param slaverequestid id of mujincontroller planning slave to connect to
      */
-    virtual void Initialize(const std::string& defaultTaskParameters, const double commandtimeout=5.0, const std::string& userinfo="{}", const std::string& slaverequestid="");
+    void Initialize(const std::string& defaultTaskParameters, const double commandtimeout=5.0, const std::string& userinfo="{}", const std::string& slaverequestid="");
 
 #ifdef MUJIN_USEZMQ
     /** \brief Initializes binpicking task.
@@ -349,16 +369,16 @@ public:
     virtual void Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq=false, const double reinitializetimeout=10, const double commandtimeout=0, const std::string& userinfo="{}", const std::string& slaverequestid="");
 #endif
 
-    virtual void SetCallerId(const std::string& callerid);
+    void SetCallerId(const std::string& callerid);
 
-    virtual void ExecuteCommand(const std::string& command, rapidjson::Document&d, const double timeout /* second */=5.0, const bool getresult=true);
+    void ExecuteCommand(const std::string& command, rapidjson::Document&d, const double timeout /* second */=5.0, const bool getresult=true);
 
     /// \brief executes command directly from rapidjson::Value struct.
     ///
     /// \param rTaskParameters will be destroyed after the call due to r-value moves
     virtual void ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout /* second */=5.0);
 
-    virtual void GetInnerEmptyRegionOBB(ResultOBB& result, const std::string& targetname, const std::string& linkname, const std::string& unit, const double timeout=0);
+    void GetInnerEmptyRegionOBB(ResultOBB& result, const std::string& targetname, const std::string& linkname, const std::string& unit, const double timeout=0);
 
     /** \brief Update objects in the scene
         \param basename base name of the object. e.g. objects will have name basename_0, basename_1, etc
@@ -368,7 +388,7 @@ public:
         \param unit unit of detectedobject info
         \param timeout seconds until this command times out
      */
-    virtual void UpdateObjects(const std::string& objectname, const std::vector<DetectedObject>& detectedobjects, const std::string& resultstate, const std::string& unit, const double timeout /* second */=5.0);
+    void UpdateObjects(const std::string& objectname, const std::vector<DetectedObject>& detectedobjects, const std::string& resultstate, const std::string& unit, const double timeout /* second */=5.0);
 
     /** \brief Establish ZMQ connection to the task
         \param reinitializetimeout seconds to wait before re-initializing the ZMQ server after the heartbeat signal is lost
@@ -388,7 +408,20 @@ public:
         \param clampToContainer if true, then planning will clamp the points to the container walls specified by locationName. Otherwise, will use all the points
         \param rExtraParameters extra parameters to be inserted
      */
-    virtual void AddPointCloudObstacle(const std::vector<float>& vpoints, const Real pointsize, const std::string& name,  const unsigned long long starttimestamp, const unsigned long long endtimestamp, const bool executionverification, const std::string& unit, int isoccluded=-1, const std::string& locationName=std::string(), const double timeout /* second */=5.0, bool clampToContainer=true, CropContainerMarginsXYZXYZPtr pCropContainerMargins=CropContainerMarginsXYZXYZPtr(), AddPointOffsetInfoPtr pAddPointOffsetInfo=AddPointOffsetInfoPtr());
+    void AddPointCloudObstacle(
+        const std::vector<float>& vpoints,
+        const Real pointsize,
+        const std::string& name,
+        const unsigned long long starttimestamp,
+        const unsigned long long endtimestamp,
+        const bool executionverification,
+        const std::string& unit,
+        int isoccluded=-1,
+        const std::string& locationName=std::string(),
+        const double timeout /* second */=5.0,
+        bool clampToContainer=true,
+        CropContainerMarginsXYZXYZPtr pCropContainerMargins=CropContainerMarginsXYZXYZPtr(),
+        AddPointOffsetInfoPtr pAddPointOffsetInfo=AddPointOffsetInfoPtr());
 
     /** \brief Visualize point cloud on controller
         \param pointslist vector of x,y,z coordinates vector in meter
@@ -397,43 +430,59 @@ public:
         \param unit of points
         \param timeout seconds until this command times out
      */
-    virtual void VisualizePointCloud(const std::vector<std::vector<float> >& pointslist, const Real pointsize, const std::vector<std::string>& names, const std::string& unit, const double timeout /* second */=5.0);
+    void VisualizePointCloud(const std::vector<std::vector<float> >& pointslist, const Real pointsize, const std::vector<std::string>& names, const std::string& unit, const double timeout /* second */=5.0);
 
     /** \brief Clear visualization made by VisualizePointCloud.
      */
-    virtual void ClearVisualization(const double timeout /* second */=5.0);
+    void ClearVisualization(const double timeout /* second */=5.0);
 
     /** \brief Check if robot is occluding the object in the view of sensor between starttime and endtime
         \param sensorname name of the sensor to be checked, example names: "sensor_kinbodyname/sensor_name" or "sensor_kinbodyname", in the latter case the first attached sensor will be used
         \param timeout seconds until this command times out
      */
-    virtual void IsRobotOccludingBody(const std::string& bodyname, const std::string& sensorname, const unsigned long long starttime, const unsigned long long endtime, bool& result, const double timeout /* second */=5.0);
+    void IsRobotOccludingBody(
+        const std::string& bodyname,
+        const std::string& sensorname,
+        const unsigned long long starttime,
+        const unsigned long long endtime,
+        bool& result,
+        const double timeout /* second */=5.0);
 
     /** \brief Gets inst object and sensor info of existing objects in the scene
         \param unit input unit
         \param result unit is always in meter
      */
-    virtual void GetInstObjectAndSensorInfo(const std::vector<std::string>& instobjectnames, const std::vector<mujin::SensorSelectionInfo>& sensornames, ResultGetInstObjectAndSensorInfo& result, const std::string& unit, const double timeout /* second */=5.0);
+    void GetInstObjectAndSensorInfo(
+        const std::vector<std::string>& instobjectnames,
+        const std::vector<mujin::SensorSelectionInfo>& sensornames,
+        ResultGetInstObjectAndSensorInfo& result,
+        const std::string& unit,
+        const double timeout /* second */=5.0);
 
     /** \brief Gets inst object info for a particular URI
         \param unit input unit
         \param result unit is always in meter
      */
-    virtual void GetInstObjectInfoFromURI(const std::string& objecturi, const Transform& instobjecttransform, ResultInstObjectInfo& result, const std::string& unit, const double timeout /* second */=5.0);
+    void GetInstObjectInfoFromURI(
+        const std::string& objecturi,
+        const Transform& instobjecttransform,
+        ResultInstObjectInfo& result,
+        const std::string& unit,
+        const double timeout /* second */=5.0);
 
     /// \brief Get state of bin picking
     /// \param result state of bin picking
     /// \param robotname name of robot
     /// \param unit unit to receive values in, either "m" (indicates radian for angle) or "mm" (indicates degree for angle)
     /// \param timeout timeout of communication
-    virtual void GetBinpickingState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
+    void GetBinpickingState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
 
     /// \brief Get state of ITL which includes picking status
     /// \param result state of bin picking
     /// \param robotname name of robot
     /// \param unit unit to receive values in, either "m" (indicates radian for angle) or "mm" (indicates degree for angle)
     /// \param timeout timeout of communication
-    virtual void GetITLState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
+    void GetITLState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
 
     /// \brief Get published state of bin picking
     /// except for initial call, this returns cached value.
@@ -441,17 +490,17 @@ public:
     /// \param robotname name of robot
     /// \param unit unit to receive values in, either "m" (indicates radian for angle) or "mm" (indicates degree for angle)
     /// \param timeout timeout of communication
-    virtual void GetPublishedTaskState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
+    void GetPublishedTaskState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout /* second */=5.0);
 
-    virtual void SendMVRRegistrationResult(
+    void SendMVRRegistrationResult(
         const rapidjson::Document &mvrResultInfo,
         double timeout /* second */=5.0);
 
     // send result of RemoveObjectsFromObjectList request
-    virtual void SendRemoveObjectsFromObjectListResult(const std::vector<ResultGetBinpickingState::RemoveObjectFromObjectListInfo>& removeObjectFromObjectListInfos, const bool success, const double timeout /* second */=5.0);
+    void SendRemoveObjectsFromObjectListResult(const std::vector<ResultGetBinpickingState::RemoveObjectFromObjectListInfo>& removeObjectFromObjectListInfos, const bool success, const double timeout /* second */=5.0);
 
     // send result of RemoveObjectFromObjectList request
-    virtual void SendTriggerDetectionCaptureResult(const std::string& triggerType, const std::string& returnCode, double timeout /* second */=5.0);
+    void SendTriggerDetectionCaptureResult(const std::string& triggerType, const std::string& returnCode, double timeout /* second */=5.0);
 
 protected:
     const std::string& _GetCallerId() const;
@@ -459,7 +508,9 @@ protected:
     /** \brief Monitors heartbeat signals from a running binpicking ZMQ server, and reinitializes the ZMQ server when heartbeat is lost.
         \param reinitializetimeout seconds to wait before re-initializing the ZMQ server after the heartbeat signal is lost
      */
-    virtual void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
+    void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
+    void _ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout /*second*/= 5.0, const bool getresult=true);
+    void _LogTaskParametersAndThrow(const std::string& taskparameters);
 
     std::stringstream _ss;
 
@@ -489,17 +540,19 @@ protected:
 typedef boost::shared_ptr<BinPickingTaskResource> BinPickingTaskResourcePtr;
 typedef boost::weak_ptr<BinPickingTaskResource> BinPickingTaskResourceWeakPtr;
 
+MUJINPLANNINGCLIENT_API BinPickingTaskResourcePtr GetOrCreateTaskFromName(WebstackClientPtr webstackClient, const std::string& scenePk, const std::string& taskName, const std::string& taskType, int options);
+
 
 namespace utils {
-MUJINCLIENT_API std::string GetJsonString(const std::string& string);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<float>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<double>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<int>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<std::string>& vec);
-MUJINCLIENT_API std::string GetJsonString(const Transform& transform);
-MUJINCLIENT_API std::string GetJsonString(const BinPickingTaskResource::DetectedObject& obj);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& string);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<float>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<double>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<int>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<std::string>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const Transform& transform);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const BinPickingTaskResource::DetectedObject& obj);
 template <typename T, size_t N>
-MUJINCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
 {
     std::stringstream ss;
     ss << std::setprecision(std::numeric_limits<T>::digits10+1);
@@ -514,26 +567,26 @@ MUJINCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
     return ss.str();
 }
 
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const std::string& value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const int value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const unsigned long long value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const Real value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const std::string& value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const int value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const unsigned long long value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const Real value);
 
 #ifdef MUJIN_USEZMQ
 /// \brief get heartbeat
 /// \param endopoint endpoint to get heartbeat from. looks like protocol://hostname:port (ex. tcp://localhost:11001)
 /// \return heartbeat as string
-MUJINCLIENT_API std::string GetHeartbeat(const std::string& endpoint);
+MUJINPLANNINGCLIENT_API std::string GetHeartbeat(const std::string& endpoint);
 
-MUJINCLIENT_API std::string GetScenePkFromHeartbeat(const std::string& heartbeat);
-MUJINCLIENT_API std::string GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat);
+MUJINPLANNINGCLIENT_API std::string GetScenePkFromHeartbeat(const std::string& heartbeat);
+MUJINPLANNINGCLIENT_API std::string GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat);
 #endif
 } // namespace utils
 
-} // namespace mujinclient
+} // namespace mujinplanningclient
 
-BOOST_STATIC_ASSERT(MUJINCLIENT_VERSION_MAJOR>=0&&MUJINCLIENT_VERSION_MAJOR<=255);
-BOOST_STATIC_ASSERT(MUJINCLIENT_VERSION_MINOR>=0&&MUJINCLIENT_VERSION_MINOR<=255);
-BOOST_STATIC_ASSERT(MUJINCLIENT_VERSION_PATCH>=0&&MUJINCLIENT_VERSION_PATCH<=255);
+BOOST_STATIC_ASSERT(MUJINPLANNINGCLIENT_VERSION_MAJOR>=0&&MUJINPLANNINGCLIENT_VERSION_MAJOR<=255);
+BOOST_STATIC_ASSERT(MUJINPLANNINGCLIENT_VERSION_MINOR>=0&&MUJINPLANNINGCLIENT_VERSION_MINOR<=255);
+BOOST_STATIC_ASSERT(MUJINPLANNINGCLIENT_VERSION_PATCH>=0&&MUJINPLANNINGCLIENT_VERSION_PATCH<=255);
 
 #endif

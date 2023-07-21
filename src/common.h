@@ -200,14 +200,14 @@ inline static unsigned long long GetNanoPerformanceTime()
 }
 #endif
 
-#define MUJIN_EXCEPTION_FORMAT0(s, errorcode) mujinclient::MujinException(boost::str(boost::format("[%s:%d] " s)%(__PRETTY_FUNCTION__)%(__LINE__)),errorcode)
+#define MUJIN_EXCEPTION_FORMAT0(s, errorcode) mujinplanningclient::MujinException(boost::str(boost::format("[%s:%d] " s)%(__PRETTY_FUNCTION__)%(__LINE__)),errorcode)
 
 /// adds the function name and line number to an exception
-#define MUJIN_EXCEPTION_FORMAT(s, args,errorcode) mujinclient::MujinException(boost::str(boost::format("[%s:%d] " s)%(__PRETTY_FUNCTION__)%(__LINE__)%args),errorcode)
+#define MUJIN_EXCEPTION_FORMAT(s, args,errorcode) mujinplanningclient::MujinException(boost::str(boost::format("[%s:%d] " s)%(__PRETTY_FUNCTION__)%(__LINE__)%args),errorcode)
 
 BOOST_STATIC_ASSERT(sizeof(unsigned short) == 2); // need this for utf-16 reading
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 class BinPickingTaskZmqResource;
 typedef boost::shared_ptr<BinPickingTaskZmqResource> BinPickingTaskZmqResourcePtr;
@@ -361,6 +361,6 @@ const char s_filesep = '/';
 const wchar_t s_wfilesep = L'/';
 #endif
 
-} // end namespace mujinclient
+} // end namespace mujinplanningclient
 
 #endif

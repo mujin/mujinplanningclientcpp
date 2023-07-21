@@ -1,6 +1,6 @@
 #pragma once
 
-#if MUJINCLIENT_LOG4CXX
+#if MUJINPLANNINGCLIENT_LOG4CXX
 
 #include <log4cxx/logger.h>
 

@@ -85,7 +85,7 @@ struct AABB
     Real extents[3]; ///< half extents of AABB
 };
 
-struct MUJINCLIENT_API SensorSelectionInfo : public mujinjson::JsonSerializable
+struct MUJINPLANNINGCLIENT_API SensorSelectionInfo : public mujinjson::JsonSerializable
 {
     SensorSelectionInfo() = default;
     SensorSelectionInfo(const std::string& sensorNameIn, const std::string& sensorLinkNameIn) : sensorName(sensorNameIn), sensorLinkName(sensorLinkNameIn) {
@@ -112,7 +112,7 @@ struct MUJINCLIENT_API SensorSelectionInfo : public mujinjson::JsonSerializable
 
 
 /// \brief the picking history being published from the slave. Anytime the robot goes inside of the source container, its pick history will be udpated.
-struct MUJINCLIENT_API PickPlaceHistoryItem
+struct MUJINPLANNINGCLIENT_API PickPlaceHistoryItem
 {
     std::string pickPlaceType; ///< the type of action that ocurred can be: "picked", "placed", "touched"
     std::string locationName; ///< the name of the region where picking occurred for "picked", where placing occurred when "placed", and where touching occurred for "touched"

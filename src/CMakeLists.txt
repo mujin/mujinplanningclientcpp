@@ -17,7 +17,7 @@ if (libzmq_FOUND)
   include_directories(${libzmq_INCLUDE_DIRS})
 endif()
 
-link_directories(${MUJINCLIENT_LINK_DIRS})
+link_directories(${MUJINPLANNINGCLIENT_LINK_DIRS})
 
 set(SOURCE_FILES
   boost_assertion_failed.cpp
@@ -40,10 +40,10 @@ if( EXTRA_MSVC_DEPEND )
   message(STATUS "adding msvc_boost dependency")
   add_dependencies(libmujinplanningclient ${EXTRA_MSVC_DEPEND})
 endif()
-set_target_properties(libmujinplanningclient PROPERTIES COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINCLIENT_DLL_EXPORTS -DMUJINCLIENT_DLL" LINK_FLAGS ""
-  OUTPUT_NAME mujinplanningclient${MUJINCLIENT_LIBRARY_SUFFIX}
+set_target_properties(libmujinplanningclient PROPERTIES COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINPLANNINGCLIENT_DLL_EXPORTS -DMUJINPLANNINGCLIENT_DLL" LINK_FLAGS ""
+  OUTPUT_NAME mujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX}
   SOVERSION 0 # always have it 0 since we're including the soversion as part of the library name
-  VERSION ${MUJINCLIENT_VERSION}
+  VERSION ${MUJINPLANNINGCLIENT_VERSION}
   CLEAN_DIRECT_OUTPUT 1
   )
 
@@ -58,17 +58,17 @@ if( OPT_BUILD_STATIC )
   # visual studio needs static lib built
   if( MSVC )
     # static version needs to have different name
-    set(LIBMUJINPLANNINGCLIENT_NAME libmujinplanningclient${MUJINCLIENT_LIBRARY_SUFFIX})
+    set(LIBMUJINPLANNINGCLIENT_NAME libmujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX})
   else()
-    set(LIBMUJINPLANNINGCLIENT_NAME mujinplanningclient${MUJINCLIENT_LIBRARY_SUFFIX})
+    set(LIBMUJINPLANNINGCLIENT_NAME mujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX})
   endif()
 
   add_library(libmujinplanningclient_static STATIC ${SOURCE_FILES})
   set_target_properties(libmujinplanningclient_static PROPERTIES OUTPUT_NAME ${LIBMUJINPLANNINGCLIENT_NAME}
                                            SOVERSION 0 # always have it 0 since we're including the soversion as part of the library name
-                                           VERSION ${MUJINCLIENT_VERSION}
+                                           VERSION ${MUJINPLANNINGCLIENT_VERSION}
                                            CLEAN_DIRECT_OUTPUT 1
-                                           COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINCLIENT_DLL_EXPORTS -DMUJINCLIENT_DLL"
+                                           COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINPLANNINGCLIENT_DLL_EXPORTS -DMUJINPLANNINGCLIENT_DLL"
                                            LINK_FLAGS "")
   
   target_link_libraries(libmujinplanningclient_static ${CURL_LIBRARIES} ${EXTRA_LIBRARIES} ${libzmq_LIBRARIES} ${libzmq_LIBRARIES} ${LOG4CXX_LIBRARIES})

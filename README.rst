@@ -43,7 +43,7 @@ There are two ways ot link with the libraries:
 Building on Windows
 -------------------
 
-In the following documentation %MUJINCLIENTGIT% means the root directory where the sources are checked out.
+In the following documentation %MUJINPLANNINGCLIENTGIT% means the root directory where the sources are checked out.
 
 1. Checkout the source code and install
 
@@ -53,7 +53,7 @@ In the following documentation %MUJINCLIENTGIT% means the root directory where t
 
 2. Download and install `CMake <http://www.cmake.org/cmake/resources/software.html>`_ (>= v2.8.10)
 
-3. Run CMake on ``%MUJINCLIENTGIT%``, choose the correct Visual Studio version for the Generator.
+3. Run CMake on ``%MUJINPLANNINGCLIENTGIT%``, choose the correct Visual Studio version for the Generator.
   
   The most important CMake options are:
   
@@ -72,7 +72,7 @@ In the following documentation %MUJINCLIENTGIT% means the root directory where t
 5. To build the project using the Visual Studio Command Prompt
   ::
    
-     cd %MUJINCLIENTGIT%\build
+     cd %MUJINPLANNINGCLIENTGIT%\build
      msbuild mujincontrollerclient.sln /p:Configuration=Release
 
 6. In order to Install into ``c:\Program Files``, compile the **INSTALL** project. For Visual Studio 9 2008 and above use
@@ -92,7 +92,7 @@ Make sure to use the Visual Studio Generators that ends with Win64. For example 
 Building x86 architecture on x64 Windows
 ========================================
 
-It is possible to force the architecture that Windows builds on by setting the **MUJINCLIENT_TARGET_PROCESSOR**
+It is possible to force the architecture that Windows builds on by setting the **MUJINPLANNINGCLIENT_TARGET_PROCESSOR**
 
   .. image:: https://raw.github.com/mujin/controllerclientcpp/master/docs/crosscompile_forcex86.png
 
@@ -118,12 +118,12 @@ If OpenSSL libraries do not exist for the specific Visual Studio version
   
   For win32 (x86) run::
   
-    perl Configure VC-WIN32 --prefix=%MUJINCLIENTGIT%\msvc_binaries\x86\vcXX
+    perl Configure VC-WIN32 --prefix=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\x86\vcXX
     ms\do_nasm
   
   For win64 (amd64) run::
   
-    perl Configure VC-WIN64A --prefix=%MUJINCLIENTGIT%\msvc_binaries\amd64\vcXX
+    perl Configure VC-WIN64A --prefix=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\amd64\vcXX
     ms\do_win64a
   
   For all builds, run::
@@ -140,19 +140,19 @@ If libcurl libraries do not exist for the specific Visual Studio version
 
 1. Uncompress ``curl-7.32.0-patched.tar.gz``
 
-2. In the Visual Studio Command Prompt and cd into ``%MUJINCLIENTGIT%/curl-7.32.0`` and double check the lib/CMakeLists.txt. Create and compile the project with the following command::
+2. In the Visual Studio Command Prompt and cd into ``%MUJINPLANNINGCLIENTGIT%/curl-7.32.0`` and double check the lib/CMakeLists.txt. Create and compile the project with the following command::
 
     mkdir buildvcXX
     cd buildvcXX
 	
   For x86::
   
-    cmake -DOPENSSL_ROOT_DIR=%MUJINCLIENTGIT%\msvc_binaries\x86\vcXX -DCMAKE_REQUIRED_INCLUDES=%MUJINCLIENTGIT%\msvc_binaries\x86\vcXX\include -DBUILD_CURL_TESTS=OFF -DCURL_USE_ARES=OFF -DCURL_STATICLIB=OFF -DCMAKE_INSTALL_PREFIX=%MUJINCLIENTGIT%\msvc_binaries\x86\vcXX -G "Visual Studio XX" ..
+    cmake -DOPENSSL_ROOT_DIR=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\x86\vcXX -DCMAKE_REQUIRED_INCLUDES=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\x86\vcXX\include -DBUILD_CURL_TESTS=OFF -DCURL_USE_ARES=OFF -DCURL_STATICLIB=OFF -DCMAKE_INSTALL_PREFIX=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\x86\vcXX -G "Visual Studio XX" ..
 	msbuild CURL.sln /p:Configuration=Release
   
   For amd64::
   
-    cmake -DOPENSSL_ROOT_DIR=%MUJINCLIENTGIT%\msvc_binaries\amd64\vcXX -DCMAKE_REQUIRED_INCLUDES=%MUJINCLIENTGIT%\msvc_binaries\amd64\vcXX\include -DBUILD_CURL_TESTS=OFF -DCURL_USE_ARES=OFF -DCURL_STATICLIB=OFF -DCMAKE_INSTALL_PREFIX=%MUJINCLIENTGIT%\msvc_binaries\amd64\vcXX -G "Visual Studio XX Win64" ..
+    cmake -DOPENSSL_ROOT_DIR=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\amd64\vcXX -DCMAKE_REQUIRED_INCLUDES=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\amd64\vcXX\include -DBUILD_CURL_TESTS=OFF -DCURL_USE_ARES=OFF -DCURL_STATICLIB=OFF -DCMAKE_INSTALL_PREFIX=%MUJINPLANNINGCLIENTGIT%\msvc_binaries\amd64\vcXX -G "Visual Studio XX Win64" ..
     msbuild CURL.sln /p:Configuration=Release
   
 3. To install, for Visual Studio 10 2010 and above use

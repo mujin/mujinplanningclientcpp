@@ -193,7 +193,7 @@ inline void ParseJson(rapidjson::Document& d, std::istream& is) {
 }
 
 template <typename Container>
-MUJINCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
+MUJINPLANNINGCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
 
 inline void ParseJsonFile(rapidjson::Document& d, const char* filename)
 {

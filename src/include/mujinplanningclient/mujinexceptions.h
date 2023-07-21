@@ -17,12 +17,12 @@
 #ifndef MUJIN_EXCEPTIONS_H
 #define MUJIN_EXCEPTIONS_H
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 #include <mujinplanningclient/config.h>
 
 /// \brief exception throw when user interrupts the function
-class MUJINCLIENT_API UserInterruptException : public std::exception
+class MUJINPLANNINGCLIENT_API UserInterruptException : public std::exception
 {
 public:
     UserInterruptException() : std::exception() {
@@ -83,7 +83,7 @@ inline const char* GetErrorCodeString(MujinErrorCode error)
 }
 
 /// \brief Exception that all Mujin internal methods throw; the error codes are held in \ref MujinErrorCode.
-class MUJINCLIENT_API MujinException : public std::exception
+class MUJINPLANNINGCLIENT_API MujinException : public std::exception
 {
 public:
     MujinException() : std::exception(), _s("unknown exception"), _error(MEC_Failed) {
@@ -112,7 +112,7 @@ private:
 };
 
 /// \brief Error that can be thrown by ExecuteGraphQuery API, use GetGraphQueryErrorCode to get detailed error code
-class MUJINCLIENT_API MujinGraphQueryError : public MujinException
+class MUJINPLANNINGCLIENT_API MujinGraphQueryError : public MujinException
 {
 public:
     MujinGraphQueryError(const std::string& s, const std::string& graphQueryErrorCode) : MujinGraphQueryError(s, graphQueryErrorCode.c_str()) {}
@@ -129,5 +129,5 @@ private:
     std::string _graphQueryErrorCode;    
 };
 
-} // namespace mujinclient
+} // namespace mujinplanningclient
 #endif

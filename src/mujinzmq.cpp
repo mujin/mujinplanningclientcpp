@@ -128,7 +128,7 @@ inline static uint64_t GetNanoPerformanceTime()
 
 
 using namespace mujinzmq;
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 ZmqSubscriber::ZmqSubscriber(const std::string& host, const unsigned int port)
 {
@@ -344,7 +344,7 @@ std::string ZmqClient::Call(const std::string& msg, const double timeout, const 
                 serachpairs[0].first = "\""; serachpairs[0].second = "";
                 serachpairs[1].first = "\\"; serachpairs[1].second = "";
                 std::string errstr;
-                mujinclient::SearchAndReplace(errstr, ss.str(), serachpairs);
+                mujinplanningclient::SearchAndReplace(errstr, ss.str(), serachpairs);
 #endif
                 throw MujinException(errstr, MEC_Timeout);
             }
