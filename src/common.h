@@ -14,11 +14,11 @@
 /** \file common.h
     \brief  Private common definitions for mujin controller client.
  */
-#ifndef MUJIN_CONTROLLERCLIENT_COMMON_H
-#define MUJIN_CONTROLLERCLIENT_COMMON_H
+#ifndef MUJIN_PLANNINGCLIENT_COMMON_H
+#define MUJIN_PLANNINGCLIENT_COMMON_H
 
 #define WIN32_LEAN_AND_MEAN
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/thread/mutex.hpp>
 #include <boost/lexical_cast.hpp>
@@ -36,7 +36,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
-#undef GetUserName // classes with ControllerClient::GetUserName
+#undef GetUserName // classes with PlanningClient::GetUserName
 
 #include <boost/typeof/std/string.hpp>
 #include <boost/typeof/std/vector.hpp>
@@ -186,7 +186,7 @@ inline static unsigned long long GetNanoPerformanceTime()
 #endif
 #endif
 
-#define GETCONTROLLERIMPL() ControllerClientImplPtr controller = boost::dynamic_pointer_cast<ControllerClientImpl>(GetController());
+#define GETCONTROLLERIMPL() PlanningClientImplPtr controller = boost::dynamic_pointer_cast<PlanningClientImpl>(GetController());
 #define CHECKCURLCODE(code, msg) if (code != CURLE_OK) { \
         throw MujinException(boost::str(boost::format("[%s:%d] curl function %s with error '%s': %s")%(__PRETTY_FUNCTION__)%(__LINE__)%(msg)%curl_easy_strerror(code)%_errormessage), MEC_HTTPClient); \
 }

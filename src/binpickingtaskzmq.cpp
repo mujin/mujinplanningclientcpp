@@ -13,16 +13,16 @@
 // limitations under the License.
 
 #include "common.h"
-#include "controllerclientimpl.h"
+#include "planningclientimpl.h"
 #include "binpickingtaskzmq.h"
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/mujinzmq.h"
 
 #include <algorithm> // find
 
 #include "logging.h"
-#include "mujincontrollerclient/mujinjson.h"
+#include "mujinplanningclient/mujinjson.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp.binpickingtask.zmq");
+MUJIN_LOGGER("mujin.planningclientcpp.binpickingtask.zmq");
 
 using namespace mujinzmq;
 
@@ -30,29 +30,29 @@ namespace mujinclient {
 using namespace utils;
 using namespace mujinjson;
 
-class ZmqMujinControllerClient : public mujinzmq::ZmqClient
+class ZmqMujinPlanningClient : public mujinzmq::ZmqClient
 {
 
 public:
-    ZmqMujinControllerClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port);
+    ZmqMujinPlanningClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port);
 
-    virtual ~ZmqMujinControllerClient();
+    virtual ~ZmqMujinPlanningClient();
 
 };
 
-ZmqMujinControllerClient::ZmqMujinControllerClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port) : ZmqClient(host, port)
+ZmqMujinPlanningClient::ZmqMujinPlanningClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port) : ZmqClient(host, port)
 {
     _InitializeSocket(context);
 }
 
-ZmqMujinControllerClient::~ZmqMujinControllerClient()
+ZmqMujinPlanningClient::~ZmqMujinPlanningClient()
 {
     // _DestroySocket() is called in  ~ZmqClient()
 }
 
-BinPickingTaskZmqResource::BinPickingTaskZmqResource(ControllerClientPtr c, const std::string& pk, const std::string& scenepk, const std::string& tasktype) : BinPickingTaskResource(c, pk, scenepk, tasktype)
+BinPickingTaskZmqResource::BinPickingTaskZmqResource(PlanningClientPtr c, const std::string& pk, const std::string& scenepk, const std::string& tasktype) : BinPickingTaskResource(c, pk, scenepk, tasktype)
 {
-    _callerid = str(boost::format("controllerclientcpp%s_zmq")%MUJINCLIENT_VERSION_STRING);
+    _callerid = str(boost::format("planningclientcpp%s_zmq")%MUJINCLIENT_VERSION_STRING);
 }
 
 BinPickingTaskZmqResource::~BinPickingTaskZmqResource()
@@ -67,8 +67,8 @@ void BinPickingTaskZmqResource::Initialize(const std::string& defaultTaskParamet
         InitializeZMQ(reinitializetimeout, timeout);
     }
 
-    _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-    if (!_zmqmujincontrollerclient) {
+    _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+    if (!_zmqmujinplanningclient) {
         throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
     }
     if (!_pHeartbeatMonitorThread) {
@@ -172,21 +172,21 @@ void BinPickingTaskZmqResource::_ExecuteCommandZMQ(const std::string& command, r
         throw MujinException("BinPicking task is not initialized, please call Initialzie() first.", MEC_Failed);
     }
 
-    if (!_zmqmujincontrollerclient) {
-        MUJIN_LOG_ERROR("zmqcontrollerclient is not initialized! initialize");
-        _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+    if (!_zmqmujinplanningclient) {
+        MUJIN_LOG_ERROR("zmqplanningclient is not initialized! initialize");
+        _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
     }
 
     std::string result_ss;
     try {
-        result_ss = _zmqmujincontrollerclient->Call(command, timeout);
+        result_ss = _zmqmujinplanningclient->Call(command, timeout);
     }
     catch (const MujinException& e) {
         MUJIN_LOG_ERROR(e.what());
         if (e.GetCode() == MEC_ZMQNoResponse) {
             MUJIN_LOG_INFO("reinitializing zmq connection with the slave");
-            _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-            if (!_zmqmujincontrollerclient) {
+            _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+            if (!_zmqmujinplanningclient) {
                 throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
             }
         } else if (e.GetCode() == MEC_Timeout) {

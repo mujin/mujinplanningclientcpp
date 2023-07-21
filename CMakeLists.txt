@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 cmake_minimum_required (VERSION 2.8.0)
-project(mujincontrollerclient)
+project(mujinplanningclient)
 set( CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE )
 
 # Define here the needed parameters
@@ -25,7 +25,7 @@ set (MUJINCLIENT_SOVERSION ${MUJINCLIENT_VERSION_MAJOR}.${MUJINCLIENT_VERSION_MI
 set (CLIENT_SOVERSION ${MUJINCLIENT_VERSION_MAJOR}.${MUJINCLIENT_VERSION_MINOR})
 message(STATUS "Compiling MUJIN Controller Client C++ Version ${MUJINCLIENT_VERSION}, soversion=${CLIENT_SOVERSION}")
 
-set(MUJINCLIENT_CMAKE_INSTALL_DIR "mujincontrollerclient-${MUJINCLIENT_VERSION_MAJOR}.${MUJINCLIENT_VERSION_MINOR}" CACHE STRING "Directory to install the cmake config files.")
+set(MUJINCLIENT_CMAKE_INSTALL_DIR "mujinplanningclient-${MUJINCLIENT_VERSION_MAJOR}.${MUJINCLIENT_VERSION_MINOR}" CACHE STRING "Directory to install the cmake config files.")
 set(MUJINCLIENT_TARGET_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "The target processor architecture to build for, this is combined with the generator toolchain")
 
 message(STATUS "Using cmake version ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION}" )
@@ -256,7 +256,7 @@ if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
   add_definitions("-fno-strict-aliasing -Wall -Werror=shadow")
 endif( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mujincontrollerclient/config.h IMMEDIATE @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h IMMEDIATE @ONLY)
 
 find_package(CURL)
 if( NOT CURL_FOUND )
@@ -316,16 +316,16 @@ else()
   message(WARNING "compiling without libzmq library")
 endif()
 
-file(GLOB mujin_header_files ${CMAKE_CURRENT_SOURCE_DIR}/include/mujincontrollerclient/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/mujincontrollerclient/*.hpp)
-install(FILES ${mujin_header_files} ${CMAKE_CURRENT_BINARY_DIR}/include/mujincontrollerclient/config.h DESTINATION include/mujincontrollerclient)
+file(GLOB mujin_header_files ${CMAKE_CURRENT_SOURCE_DIR}/include/mujinplanningclient/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/mujinplanningclient/*.hpp)
+install(FILES ${mujin_header_files} ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h DESTINATION include/mujinplanningclient)
 
 macro(build_sample name)
   include_directories(${LOG4CXX_INCLUDEDIR} ${libzmq_INCLUDE_DIRS})
   link_directories(${LOG4CXX_LIBDIR})
   add_executable(${name} ${name}.cpp)
   set_target_properties(${name} PROPERTIES COMPILE_FLAGS "${Boost_CFLAGS}" LINK_FLAGS "")
-  add_dependencies(${name} libmujincontrollerclient)
-  target_link_libraries (${name} libmujincontrollerclient ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${EXTRA_LIBRARIES} ${LOG4CXX_LIBRARIES})
+  add_dependencies(${name} libmujinplanningclient)
+  target_link_libraries (${name} libmujinplanningclient ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${EXTRA_LIBRARIES} ${LOG4CXX_LIBRARIES})
   install(TARGETS ${name} DESTINATION bin)
 endmacro(build_sample)
 
@@ -337,15 +337,15 @@ if( OPT_BUILD_TESTS )
   add_subdirectory(test)
 endif()
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/mujincontrollerclient DESTINATION share)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/mujinplanningclient DESTINATION share)
 
 # add make uninstall capability
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
-set(MujinControllerClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujincontrollerclient-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujincontrollerclient-config.cmake" IMMEDIATE @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujincontrollerclient-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujincontrollerclient-config-version.cmake" IMMEDIATE @ONLY)
+set(MujinPlanningClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config.cmake" IMMEDIATE @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config-version.cmake" IMMEDIATE @ONLY)
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mujincontrollerclient-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/mujincontrollerclient-config-version.cmake" DESTINATION "lib${LIB_SUFFIX}/cmake/${MUJINCLIENT_CMAKE_INSTALL_DIR}")
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config.cmake" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config-version.cmake" DESTINATION "lib${LIB_SUFFIX}/cmake/${MUJINCLIENT_CMAKE_INSTALL_DIR}")
 

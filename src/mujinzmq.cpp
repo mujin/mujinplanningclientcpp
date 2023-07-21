@@ -1,4 +1,4 @@
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/mujinzmq.h"
 
 #include <boost/thread.hpp>
 #if BOOST_VERSION > 104800
@@ -10,7 +10,7 @@
 #include "common.h"
 #include "logging.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp.mujinzmq");
+MUJIN_LOGGER("mujin.planningclientcpp.mujinzmq");
 
 
 #if defined(_MSC_VER) && _MSC_VER < 1600

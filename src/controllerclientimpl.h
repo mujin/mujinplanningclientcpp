@@ -11,23 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/** \file controllerclientimpl.h
-    \brief  Private header file implementing the ControllerClient interface
+/** \file planningclientimpl.h
+    \brief  Private header file implementing the PlanningClient interface
  */
-#ifndef MUJIN_CONTROLLERCLIENT_IMPL_H
-#define MUJIN_CONTROLLERCLIENT_IMPL_H
+#ifndef MUJIN_PLANNINGCLIENT_IMPL_H
+#define MUJIN_PLANNINGCLIENT_IMPL_H
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/enable_shared_from_this.hpp>
 
 namespace mujinclient {
 
-class ControllerClientImpl : public ControllerClient, public boost::enable_shared_from_this<ControllerClientImpl>
+class PlanningClientImpl : public PlanningClient, public boost::enable_shared_from_this<PlanningClientImpl>
 {
 public:
-    ControllerClientImpl(const std::string& usernamepassword, const std::string& baseuri, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout);
-    virtual ~ControllerClientImpl();
+    PlanningClientImpl(const std::string& usernamepassword, const std::string& baseuri, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout);
+    virtual ~PlanningClientImpl();
 
     virtual const std::string& GetUserName() const;
     virtual const std::string& GetBaseURI() const;
@@ -286,7 +286,7 @@ protected:
     rapidjson::StringBuffer _rRequestStringBufferCache; ///< cache for request string, protected by _mutex
 };
 
-typedef boost::shared_ptr<ControllerClientImpl> ControllerClientImplPtr;
+typedef boost::shared_ptr<PlanningClientImpl> PlanningClientImplPtr;
 
 } // end namespace mujinclient
 

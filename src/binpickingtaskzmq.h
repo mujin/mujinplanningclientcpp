@@ -11,27 +11,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/** \file mujincontrollerclient.h
+/** \file mujinplanningclient.h
     \brief  Defines the public headers of the MUJIN Controller Client
  */
-#ifndef MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_ZMQ_H
-#define MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_ZMQ_H
+#ifndef MUJIN_PLANNINGCLIENT_BINPICKINGTASK_ZMQ_H
+#define MUJIN_PLANNINGCLIENT_BINPICKINGTASK_ZMQ_H
 
-#include "mujincontrollerclient/binpickingtask.h"
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/binpickingtask.h"
+#include "mujinplanningclient/mujinzmq.h"
 
 namespace mujinclient {
 
 /** \brief client to mujin controller via zmq socket connection
  */
-class ZmqMujinControllerClient;
-typedef boost::shared_ptr<ZmqMujinControllerClient> ZmqMujinControllerClientPtr;
-typedef boost::weak_ptr<ZmqMujinControllerClient> ZmqMujinControllerClientWeakPtr;
+class ZmqMujinPlanningClient;
+typedef boost::shared_ptr<ZmqMujinPlanningClient> ZmqMujinPlanningClientPtr;
+typedef boost::weak_ptr<ZmqMujinPlanningClient> ZmqMujinPlanningClientWeakPtr;
 
 class MUJINCLIENT_API BinPickingTaskZmqResource : public BinPickingTaskResource
 {
 public:
-    BinPickingTaskZmqResource(ControllerClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
+    BinPickingTaskZmqResource(PlanningClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
 
     ~BinPickingTaskZmqResource();
 
@@ -46,7 +46,7 @@ public:
     void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
 
 private:
-    ZmqMujinControllerClientPtr _zmqmujincontrollerclient;
+    ZmqMujinPlanningClientPtr _zmqmujinplanningclient;
 };
 
 } // namespace mujinclient

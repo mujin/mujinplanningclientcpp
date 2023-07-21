@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "common.h"
-#include "controllerclientimpl.h"
+#include "planningclientimpl.h"
 #if BOOST_VERSION > 104800
 #include <boost/algorithm/string/replace.hpp>
 #endif
 #include <boost/thread.hpp> // for sleep
-#include "mujincontrollerclient/binpickingtask.h"
+#include "mujinplanningclient/binpickingtask.h"
 
 #ifdef MUJIN_USEZMQ
-#include "mujincontrollerclient/zmq.hpp"
+#include "mujinplanningclient/zmq.hpp"
 #endif
 
 #ifdef _WIN32
@@ -35,9 +35,9 @@
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
-#include "mujincontrollerclient/mujinjson.h"
+#include "mujinplanningclient/mujinjson.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp.binpickingtask");
+MUJIN_LOGGER("mujin.planningclientcpp.binpickingtask");
 
 namespace mujinclient {
 using namespace utils;
@@ -60,7 +60,7 @@ static void LoadAABBFromJsonValue(const rapidjson::Value& rAABB, mujin::AABB& aa
     mujinjson::LoadJsonValue(rExtents[2], aabb.extents[2]);
 }
 
-BinPickingResultResource::BinPickingResultResource(ControllerClientPtr controller, const std::string& pk) : PlanningResultResource(controller,"binpickingresult", pk)
+BinPickingResultResource::BinPickingResultResource(PlanningClientPtr controller, const std::string& pk) : PlanningResultResource(controller,"binpickingresult", pk)
 {
 }
 
@@ -68,9 +68,9 @@ BinPickingResultResource::~BinPickingResultResource()
 {
 }
 
-BinPickingTaskResource::BinPickingTaskResource(ControllerClientPtr pcontroller, const std::string& pk, const std::string& scenepk, const std::string& tasktype) : TaskResource(pcontroller,pk), _zmqPort(-1), _heartbeatPort(-1), _tasktype(tasktype), _bIsInitialized(false)
+BinPickingTaskResource::BinPickingTaskResource(PlanningClientPtr pcontroller, const std::string& pk, const std::string& scenepk, const std::string& tasktype) : TaskResource(pcontroller,pk), _zmqPort(-1), _heartbeatPort(-1), _tasktype(tasktype), _bIsInitialized(false)
 {
-    _callerid = str(boost::format("controllerclientcpp%s_web")%MUJINCLIENT_VERSION_STRING);
+    _callerid = str(boost::format("planningclientcpp%s_web")%MUJINCLIENT_VERSION_STRING);
     _scenepk = scenepk;
     // get hostname from uri
     GETCONTROLLERIMPL();

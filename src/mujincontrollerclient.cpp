@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "common.h"
-#include "controllerclientimpl.h"
+#include "planningclientimpl.h"
 #include <boost/thread.hpp> // for sleep
 #include <boost/algorithm/string.hpp>
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/binpickingtask.h>
 
 #ifdef MUJIN_USEZMQ
 #include "binpickingtaskzmq.h"
 #endif
 
 #include "logging.h"
-#include "mujincontrollerclient/mujinjson.h"
+#include "mujinplanningclient/mujinjson.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp");
+MUJIN_LOGGER("mujin.planningclientcpp");
 
 namespace mujinclient {
 
@@ -97,7 +97,7 @@ void SerializeEnvironmentStateToJSON(const EnvironmentState& envstate, std::ostr
     os << "]";
 }
 
-WebResource::WebResource(ControllerClientPtr controller, const std::string& resourcename, const std::string& pk) : __controller(controller), __resourcename(resourcename), __pk(pk)
+WebResource::WebResource(PlanningClientPtr controller, const std::string& resourcename, const std::string& pk) : __controller(controller), __resourcename(resourcename), __pk(pk)
 {
     BOOST_ASSERT(__pk.size()>0);
 }
@@ -131,23 +131,23 @@ void WebResource::Copy(const std::string& newname, int options, double timeout)
     throw MujinException("not implemented yet");
 }
 
-ObjectResource::ObjectResource(ControllerClientPtr controller, const std::string& pk_) : WebResource(controller, "object", pk_), pk(pk_)
+ObjectResource::ObjectResource(PlanningClientPtr controller, const std::string& pk_) : WebResource(controller, "object", pk_), pk(pk_)
 {
 }
 
-ObjectResource::ObjectResource(ControllerClientPtr controller, const std::string& resource, const std::string& pk_) : WebResource(controller, resource, pk_), pk(pk_)
+ObjectResource::ObjectResource(PlanningClientPtr controller, const std::string& resource, const std::string& pk_) : WebResource(controller, resource, pk_), pk(pk_)
 {
 }
 
-ObjectResource::LinkResource::LinkResource(ControllerClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/link")%objectpk_), pk_), pk(pk_), objectpk(objectpk_)
+ObjectResource::LinkResource::LinkResource(PlanningClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/link")%objectpk_), pk_), pk(pk_), objectpk(objectpk_)
 {
 }
 
-ObjectResource::GeometryResource::GeometryResource(ControllerClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/geometry")%objectpk_), pk_), pk(pk_), objectpk(objectpk_)
+ObjectResource::GeometryResource::GeometryResource(PlanningClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/geometry")%objectpk_), pk_), pk(pk_), objectpk(objectpk_)
 {
 }
 
-ObjectResource::IkParamResource::IkParamResource(ControllerClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/ikparam")%objectpk_), pk_), pk(pk_)
+ObjectResource::IkParamResource::IkParamResource(PlanningClientPtr controller, const std::string& objectpk_, const std::string& pk_) : WebResource(controller, str(boost::format("object/%s/ikparam")%objectpk_), pk_), pk(pk_)
 {
 }
 
@@ -410,11 +410,11 @@ void ObjectResource::GetIkParams(std::vector<ObjectResource::IkParamResourcePtr>
     }
 }
 
-RobotResource::RobotResource(ControllerClientPtr controller, const std::string& pk_) : ObjectResource(controller, "robot", pk_)
+RobotResource::RobotResource(PlanningClientPtr controller, const std::string& pk_) : ObjectResource(controller, "robot", pk_)
 {
 }
 
-RobotResource::ToolResource::ToolResource(ControllerClientPtr controller, const std::string& robotobjectpk, const std::string& pk_) : WebResource(controller, str(boost::format("robot/%s/tool")%robotobjectpk), pk_), pk(pk_)
+RobotResource::ToolResource::ToolResource(PlanningClientPtr controller, const std::string& robotobjectpk, const std::string& pk_) : WebResource(controller, str(boost::format("robot/%s/tool")%robotobjectpk), pk_), pk(pk_)
 {
 }
 
@@ -441,7 +441,7 @@ void RobotResource::GetTools(std::vector<RobotResource::ToolResourcePtr>& tools)
     }
 }
 
-RobotResource::AttachedSensorResource::AttachedSensorResource(ControllerClientPtr controller, const std::string& robotobjectpk, const std::string& pk_) : WebResource(controller, str(boost::format("robot/%s/attachedsensor")%robotobjectpk), pk_), pk(pk_)
+RobotResource::AttachedSensorResource::AttachedSensorResource(PlanningClientPtr controller, const std::string& robotobjectpk, const std::string& pk_) : WebResource(controller, str(boost::format("robot/%s/attachedsensor")%robotobjectpk), pk_), pk(pk_)
 {
 }
 
@@ -536,7 +536,7 @@ void RobotResource::GetAttachedSensors(std::vector<AttachedSensorResourcePtr>& a
     }
 }
 
-SceneResource::InstObject::InstObject(ControllerClientPtr controller, const std::string& scenepk, const std::string& pk_) : WebResource(controller, str(boost::format("scene/%s/instobject")%scenepk), pk_), pk(pk_)
+SceneResource::InstObject::InstObject(PlanningClientPtr controller, const std::string& scenepk, const std::string& pk_) : WebResource(controller, str(boost::format("scene/%s/instobject")%scenepk), pk_), pk(pk_)
 {
 }
 
@@ -630,7 +630,7 @@ void SceneResource::InstObject::ReleaseObject(InstObjectPtr grabbedobject, std::
 
 }
 
-SceneResource::SceneResource(ControllerClientPtr controller, const std::string& pk) : WebResource(controller, "scene", pk)
+SceneResource::SceneResource(PlanningClientPtr controller, const std::string& pk) : WebResource(controller, "scene", pk)
 {
     // get something from the scene?
     //this->Get("");
@@ -972,7 +972,7 @@ SceneResourcePtr SceneResource::Copy(const std::string& name)
     return scene;
 }
 
-TaskResource::TaskResource(ControllerClientPtr controller, const std::string& pk) : WebResource(controller,"task",pk)
+TaskResource::TaskResource(PlanningClientPtr controller, const std::string& pk) : WebResource(controller,"task",pk)
 {
 }
 
@@ -1183,7 +1183,7 @@ PlanningResultResourcePtr TaskResource::GetResult()
     return result;
 }
 
-OptimizationResource::OptimizationResource(ControllerClientPtr controller, const std::string& pk) : WebResource(controller,"optimization",pk)
+OptimizationResource::OptimizationResource(PlanningClientPtr controller, const std::string& pk) : WebResource(controller,"optimization",pk)
 {
 }
 
@@ -1267,11 +1267,11 @@ void OptimizationResource::GetResults(std::vector<PlanningResultResourcePtr>& re
     }
 }
 
-PlanningResultResource::PlanningResultResource(ControllerClientPtr controller, const std::string& resulttype, const std::string& pk) : WebResource(controller,resulttype,pk)
+PlanningResultResource::PlanningResultResource(PlanningClientPtr controller, const std::string& resulttype, const std::string& pk) : WebResource(controller,resulttype,pk)
 {
 }
 
-PlanningResultResource::PlanningResultResource(ControllerClientPtr controller, const std::string& pk) : WebResource(controller,"planningresult",pk)
+PlanningResultResource::PlanningResultResource(PlanningClientPtr controller, const std::string& pk) : WebResource(controller,"planningresult",pk)
 {
 }
 
@@ -1309,11 +1309,11 @@ void PlanningResultResource::GetPrograms(RobotControllerPrograms& programs, cons
     }
 }
 
-DebugResource::DebugResource(ControllerClientPtr controller, const std::string& pk_) : WebResource(controller, "debug", pk_), pk(pk_)
+DebugResource::DebugResource(PlanningClientPtr controller, const std::string& pk_) : WebResource(controller, "debug", pk_), pk(pk_)
 {
 }
 
-DebugResource::DebugResource(ControllerClientPtr controller, const std::string& resource, const std::string& pk_) : WebResource(controller, resource, pk_), pk(pk_)
+DebugResource::DebugResource(PlanningClientPtr controller, const std::string& resource, const std::string& pk_) : WebResource(controller, resource, pk_), pk(pk_)
 {
 }
 
@@ -1323,17 +1323,17 @@ void DebugResource::Download(std::ostream& outputStream, double timeout)
     controller->CallGet(str(boost::format("%s/%s/download/")%GetResourceName()%GetPrimaryKey()), outputStream, 200, timeout);
 }
 
-ControllerClientPtr CreateControllerClient(const std::string& usernamepassword, const std::string& baseurl, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout)
+PlanningClientPtr CreatePlanningClient(const std::string& usernamepassword, const std::string& baseurl, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout)
 {
-    return ControllerClientPtr(new ControllerClientImpl(usernamepassword, baseurl, proxyserverport, proxyuserpw, options, timeout));
+    return PlanningClientPtr(new PlanningClientImpl(usernamepassword, baseurl, proxyserverport, proxyuserpw, options, timeout));
 }
 
-void ControllerClientDestroy()
+void PlanningClientDestroy()
 {
-    DestroyControllerClient();
+    DestroyPlanningClient();
 }
 
-void DestroyControllerClient()
+void DestroyPlanningClient()
 {
 }
 

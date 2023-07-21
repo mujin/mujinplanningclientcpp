@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "common.h"
-#include "controllerclientimpl.h"
+#include "planningclientimpl.h"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/scope_exit.hpp>
@@ -24,7 +24,7 @@
 
 #include "logging.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp");
+MUJIN_LOGGER("mujin.planningclientcpp");
 
 #define CURL_OPTION_SAVER(curl, curlopt, curvalue) boost::shared_ptr<void> __curloptionsaver ## curlopt((void*)0, boost::bind(boost::function<CURLcode(CURL*, CURLoption, decltype(curvalue))>(curl_easy_setopt), curl, curlopt, curvalue))
 #define CURL_OPTION_SETTER(curl, curlopt, newvalue) CHECKCURLCODE(curl_easy_setopt(curl, curlopt, newvalue), "curl_easy_setopt " # curlopt)
@@ -91,7 +91,7 @@ std::wstring ParseWincapsWCNPath(const T& sourcefilename, const boost::function<
     return strWCNPath;
 }
 
-ControllerClientImpl::ControllerClientImpl(const std::string& usernamepassword, const std::string& baseuri, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout)
+PlanningClientImpl::PlanningClientImpl(const std::string& usernamepassword, const std::string& baseuri, const std::string& proxyserverport, const std::string& proxyuserpw, int options, double timeout)
 {
     BOOST_ASSERT( !baseuri.empty() );
     size_t usernameindex = 0;
@@ -172,7 +172,7 @@ ControllerClientImpl::ControllerClientImpl(const std::string& usernamepassword, 
     // CURL_OPTION_SETTER(_curl, CURLOPT_WRITEFUNCTION, _WriteStringStreamCallback); // just to start the cookie engine
     // CURL_OPTION_SETTER(_curl, CURLOPT_WRITEDATA, &_buffer);
 
-    std::string useragent = std::string("controllerclientcpp/")+MUJINCLIENT_VERSION_STRING;
+    std::string useragent = std::string("planningclientcpp/")+MUJINCLIENT_VERSION_STRING;
     CURL_OPTION_SETTER(_curl, CURLOPT_USERAGENT, useragent.c_str());
 
     CURL_OPTION_SETTER(_curl, CURLOPT_FOLLOWLOCATION, 1L); // we can always follow redirect now, we don't need to detect login page
@@ -225,7 +225,7 @@ ControllerClientImpl::ControllerClientImpl(const std::string& usernamepassword, 
     _SetupHTTPHeadersMultipartFormData();
 }
 
-ControllerClientImpl::~ControllerClientImpl()
+PlanningClientImpl::~PlanningClientImpl()
 {
     if( !!_httpheadersjson ) {
         curl_slist_free_all(_httpheadersjson);
@@ -239,7 +239,7 @@ ControllerClientImpl::~ControllerClientImpl()
     curl_easy_cleanup(_curl);
 }
 
-std::string ControllerClientImpl::GetVersion()
+std::string PlanningClientImpl::GetVersion()
 {
     if (!_profile.IsObject()) {
         _profile.SetObject();
@@ -248,17 +248,17 @@ std::string ControllerClientImpl::GetVersion()
     return GetJsonValueByKey<std::string>(_profile, "version");
 }
 
-const std::string& ControllerClientImpl::GetUserName() const
+const std::string& PlanningClientImpl::GetUserName() const
 {
     return _username;
 }
 
-const std::string& ControllerClientImpl::GetBaseURI() const
+const std::string& PlanningClientImpl::GetBaseURI() const
 {
     return _baseuri;
 }
 
-void ControllerClientImpl::SetCharacterEncoding(const std::string& newencoding)
+void PlanningClientImpl::SetCharacterEncoding(const std::string& newencoding)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _charset = newencoding;
@@ -268,7 +268,7 @@ void ControllerClientImpl::SetCharacterEncoding(const std::string& newencoding)
     // _SetupHTTPHeadersMultipartFormData();
 }
 
-void ControllerClientImpl::SetProxy(const std::string& serverport, const std::string& userpw)
+void PlanningClientImpl::SetProxy(const std::string& serverport, const std::string& userpw)
 {
     // mutally exclusive with unix endpoint settings
     CURL_OPTION_SETTER(_curl, CURLOPT_UNIX_SOCKET_PATH, NULL);
@@ -276,7 +276,7 @@ void ControllerClientImpl::SetProxy(const std::string& serverport, const std::st
     CURL_OPTION_SETTER(_curl, CURLOPT_PROXYUSERPWD, userpw.c_str());
 }
 
-void ControllerClientImpl::SetUnixEndpoint(const std::string& unixendpoint)
+void PlanningClientImpl::SetUnixEndpoint(const std::string& unixendpoint)
 {
     // mutually exclusive with proxy settings
     CURL_OPTION_SETTER(_curl, CURLOPT_PROXY, NULL);
@@ -284,7 +284,7 @@ void ControllerClientImpl::SetUnixEndpoint(const std::string& unixendpoint)
     CURL_OPTION_SETTER(_curl, CURLOPT_UNIX_SOCKET_PATH, unixendpoint.c_str());
 }
 
-void ControllerClientImpl::SetLanguage(const std::string& language)
+void PlanningClientImpl::SetLanguage(const std::string& language)
 {
     boost::mutex::scoped_lock lock(_mutex);
     if (language!= "") {
@@ -296,12 +296,12 @@ void ControllerClientImpl::SetLanguage(const std::string& language)
     // _SetupHTTPHeadersMultipartFormData();
 }
 
-void ControllerClientImpl::SetUserAgent(const std::string& userAgent)
+void PlanningClientImpl::SetUserAgent(const std::string& userAgent)
 {
     CURL_OPTION_SETTER(_curl, CURLOPT_USERAGENT, userAgent.c_str());
 }
 
-void ControllerClientImpl::SetAdditionalHeaders(const std::vector<std::string>& additionalHeaders)
+void PlanningClientImpl::SetAdditionalHeaders(const std::vector<std::string>& additionalHeaders)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _additionalHeaders = additionalHeaders;
@@ -310,7 +310,7 @@ void ControllerClientImpl::SetAdditionalHeaders(const std::vector<std::string>& 
     _SetupHTTPHeadersMultipartFormData();
 }
 
-void ControllerClientImpl::_ExecuteGraphQuery(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout, bool checkForErrors, bool returnRawResponse)
+void PlanningClientImpl::_ExecuteGraphQuery(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout, bool checkForErrors, bool returnRawResponse)
 {
     rResult.SetNull(); // zero output
 
@@ -379,17 +379,17 @@ void ControllerClientImpl::_ExecuteGraphQuery(const char* operationName, const c
     }
 }
 
-void ControllerClientImpl::ExecuteGraphQuery(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout)
+void PlanningClientImpl::ExecuteGraphQuery(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout)
 {
     _ExecuteGraphQuery(operationName, query, rVariables, rResult, rAlloc, timeout, true, false);
 }
 
-void ControllerClientImpl::ExecuteGraphQueryRaw(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout)
+void PlanningClientImpl::ExecuteGraphQueryRaw(const char* operationName, const char* query, const rapidjson::Value& rVariables, rapidjson::Value& rResult, rapidjson::Document::AllocatorType& rAlloc, double timeout)
 {
     _ExecuteGraphQuery(operationName, query, rVariables, rResult, rAlloc, timeout, false, true);
 }
 
-void ControllerClientImpl::RestartServer(double timeout)
+void PlanningClientImpl::RestartServer(double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -409,12 +409,12 @@ void ControllerClientImpl::RestartServer(double timeout)
     }
 }
 
-void ControllerClientImpl::CancelAllJobs()
+void PlanningClientImpl::CancelAllJobs()
 {
     CallDelete("job/?format=json", 204);
 }
 
-void ControllerClientImpl::GetRunTimeStatuses(std::vector<JobStatus>& statuses, int options)
+void PlanningClientImpl::GetRunTimeStatuses(std::vector<JobStatus>& statuses, int options)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     std::string url = "job/?format=json&fields=pk,status,fnname,elapsedtime";
@@ -438,7 +438,7 @@ void ControllerClientImpl::GetRunTimeStatuses(std::vector<JobStatus>& statuses, 
     }
 }
 
-void ControllerClientImpl::GetScenePrimaryKeys(std::vector<std::string>& scenekeys)
+void PlanningClientImpl::GetScenePrimaryKeys(std::vector<std::string>& scenekeys)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     CallGet("scene/?format=json&limit=0&fields=pk", pt);
@@ -450,7 +450,7 @@ void ControllerClientImpl::GetScenePrimaryKeys(std::vector<std::string>& sceneke
     }
 }
 
-SceneResourcePtr ControllerClientImpl::RegisterScene_UTF8(const std::string& uri, const std::string& scenetype)
+SceneResourcePtr PlanningClientImpl::RegisterScene_UTF8(const std::string& uri, const std::string& scenetype)
 {
     BOOST_ASSERT(scenetype.size()>0);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -460,7 +460,7 @@ SceneResourcePtr ControllerClientImpl::RegisterScene_UTF8(const std::string& uri
     return scene;
 }
 
-SceneResourcePtr ControllerClientImpl::RegisterScene_UTF16(const std::wstring& uri, const std::string& scenetype)
+SceneResourcePtr PlanningClientImpl::RegisterScene_UTF16(const std::wstring& uri, const std::string& scenetype)
 {
     BOOST_ASSERT(scenetype.size()>0);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -470,7 +470,7 @@ SceneResourcePtr ControllerClientImpl::RegisterScene_UTF16(const std::wstring& u
     return scene;
 }
 
-SceneResourcePtr ControllerClientImpl::ImportSceneToCOLLADA_UTF8(const std::string& importuri, const std::string& importformat, const std::string& newuri, bool overwrite)
+SceneResourcePtr PlanningClientImpl::ImportSceneToCOLLADA_UTF8(const std::string& importuri, const std::string& importformat, const std::string& newuri, bool overwrite)
 {
     BOOST_ASSERT(importformat.size()>0);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -480,7 +480,7 @@ SceneResourcePtr ControllerClientImpl::ImportSceneToCOLLADA_UTF8(const std::stri
     return scene;
 }
 
-SceneResourcePtr ControllerClientImpl::ImportSceneToCOLLADA_UTF16(const std::wstring& importuri, const std::string& importformat, const std::wstring& newuri, bool overwrite)
+SceneResourcePtr PlanningClientImpl::ImportSceneToCOLLADA_UTF16(const std::wstring& importuri, const std::string& importformat, const std::wstring& newuri, bool overwrite)
 {
     BOOST_ASSERT(importformat.size()>0);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -490,7 +490,7 @@ SceneResourcePtr ControllerClientImpl::ImportSceneToCOLLADA_UTF16(const std::wst
     return scene;
 }
 
-void ControllerClientImpl::SyncUpload_UTF8(const std::string& _sourcefilename, const std::string& destinationdir, const std::string& scenetype)
+void PlanningClientImpl::SyncUpload_UTF8(const std::string& _sourcefilename, const std::string& destinationdir, const std::string& scenetype)
 {
     // TODO use curl_multi_perform to allow uploading of multiple files simultaneously
     // TODO should LOCK with WebDAV repository?
@@ -572,7 +572,7 @@ void ControllerClientImpl::SyncUpload_UTF8(const std::string& _sourcefilename, c
      */
 }
 
-void ControllerClientImpl::SyncUpload_UTF16(const std::wstring& _sourcefilename_utf16, const std::wstring& destinationdir_utf16, const std::string& scenetype)
+void PlanningClientImpl::SyncUpload_UTF16(const std::wstring& _sourcefilename_utf16, const std::wstring& destinationdir_utf16, const std::string& scenetype)
 {
     // TODO use curl_multi_perform to allow uploading of multiple files simultaneously
     // TODO should LOCK with WebDAV repository?
@@ -660,7 +660,7 @@ void ControllerClientImpl::SyncUpload_UTF16(const std::wstring& _sourcefilename_
 }
 
 /// \brief expectedhttpcode is not 0, then will check with the returned http code and if not equal will throw an exception
-int ControllerClientImpl::CallGet(const std::string& relativeuri, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallGet(const std::string& relativeuri, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _uri = _baseapiuri;
@@ -668,7 +668,7 @@ int ControllerClientImpl::CallGet(const std::string& relativeuri, rapidjson::Doc
     return _CallGet(_uri, pt, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::_CallGet(const std::string& desturi, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallGet(const std::string& desturi, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_INFO(str(boost::format("GET %s")%desturi));
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -693,7 +693,7 @@ int ControllerClientImpl::_CallGet(const std::string& desturi, rapidjson::Docume
     return http_code;
 }
 
-int ControllerClientImpl::CallGet(const std::string& relativeuri, std::string& outputdata, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallGet(const std::string& relativeuri, std::string& outputdata, int expectedhttpcode, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _uri = _baseapiuri;
@@ -701,7 +701,7 @@ int ControllerClientImpl::CallGet(const std::string& relativeuri, std::string& o
     return _CallGet(_uri, outputdata, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::_CallGet(const std::string& desturi, std::string& outputdata, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallGet(const std::string& desturi, std::string& outputdata, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_VERBOSE(str(boost::format("GET %s")%desturi));
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -729,7 +729,7 @@ int ControllerClientImpl::_CallGet(const std::string& desturi, std::string& outp
     return http_code;
 }
 
-int ControllerClientImpl::CallGet(const std::string& relativeuri, std::ostream& outputStream, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallGet(const std::string& relativeuri, std::ostream& outputStream, int expectedhttpcode, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _uri = _baseapiuri;
@@ -737,7 +737,7 @@ int ControllerClientImpl::CallGet(const std::string& relativeuri, std::ostream& 
     return _CallGet(_uri, outputStream, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::_CallGet(const std::string& desturi, std::ostream& outputStream, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallGet(const std::string& desturi, std::ostream& outputStream, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_VERBOSE(str(boost::format("GET %s")%desturi));
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -756,7 +756,7 @@ int ControllerClientImpl::_CallGet(const std::string& desturi, std::ostream& out
     return http_code;
 }
 
-int ControllerClientImpl::CallGet(const std::string& relativeuri, std::vector<unsigned char>& outputdata, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallGet(const std::string& relativeuri, std::vector<unsigned char>& outputdata, int expectedhttpcode, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _uri = _baseapiuri;
@@ -764,7 +764,7 @@ int ControllerClientImpl::CallGet(const std::string& relativeuri, std::vector<un
     return _CallGet(_uri, outputdata, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::_CallGet(const std::string& desturi, std::vector<unsigned char>& outputdata, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallGet(const std::string& desturi, std::vector<unsigned char>& outputdata, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_VERBOSE(str(boost::format("GET %s")%desturi));
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -795,7 +795,7 @@ int ControllerClientImpl::_CallGet(const std::string& desturi, std::vector<unsig
 }
 
 /// \brief expectedhttpcode is not 0, then will check with the returned http code and if not equal will throw an exception
-int ControllerClientImpl::CallPost(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallPost(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_DEBUG(str(boost::format("POST %s%s")%_baseapiuri%relativeuri));
     boost::mutex::scoped_lock lock(_mutex);
@@ -805,7 +805,7 @@ int ControllerClientImpl::CallPost(const std::string& relativeuri, const std::st
 }
 
 /// \brief expectedhttpcode is not 0, then will check with the returned http code and if not equal will throw an exception
-int ControllerClientImpl::_CallPost(const std::string& desturi, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallPost(const std::string& desturi, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_VERBOSE(str(boost::format("POST %s")%desturi));
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_TIMEOUT_MS, 0L, (long)(timeout * 1000L));
@@ -834,17 +834,17 @@ int ControllerClientImpl::_CallPost(const std::string& desturi, const std::strin
     return http_code;
 }
 
-int ControllerClientImpl::CallPost_UTF8(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallPost_UTF8(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     return CallPost(relativeuri, encoding::ConvertUTF8ToFileSystemEncoding(data), pt, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::CallPost_UTF16(const std::string& relativeuri, const std::wstring& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallPost_UTF16(const std::string& relativeuri, const std::wstring& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     return CallPost(relativeuri, encoding::ConvertUTF16ToFileSystemEncoding(data), pt, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::_CallPut(const std::string& relativeuri, const void* pdata, size_t nDataSize, rapidjson::Document& pt, curl_slist* headers, int expectedhttpcode, double timeout)
+int PlanningClientImpl::_CallPut(const std::string& relativeuri, const void* pdata, size_t nDataSize, rapidjson::Document& pt, curl_slist* headers, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_DEBUG(str(boost::format("PUT %s%s")%_baseapiuri%relativeuri));
     boost::mutex::scoped_lock lock(_mutex);
@@ -876,17 +876,17 @@ int ControllerClientImpl::_CallPut(const std::string& relativeuri, const void* p
     return http_code;
 }
 
-int ControllerClientImpl::CallPutSTL(const std::string& relativeuri, const std::vector<unsigned char>& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallPutSTL(const std::string& relativeuri, const std::vector<unsigned char>& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     return _CallPut(relativeuri, static_cast<const void*> (&data[0]), data.size(), pt, _httpheadersstl, expectedhttpcode, timeout);
 }
 
-int ControllerClientImpl::CallPutJSON(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
+int PlanningClientImpl::CallPutJSON(const std::string& relativeuri, const std::string& data, rapidjson::Document& pt, int expectedhttpcode, double timeout)
 {
     return _CallPut(relativeuri, static_cast<const void*>(&data[0]), data.size(), pt, _httpheadersjson, expectedhttpcode, timeout);
 }
 
-void ControllerClientImpl::CallDelete(const std::string& relativeuri, int expectedhttpcode, double timeout)
+void PlanningClientImpl::CallDelete(const std::string& relativeuri, int expectedhttpcode, double timeout)
 {
     MUJIN_LOG_DEBUG(str(boost::format("DELETE %s%s")%_baseapiuri%relativeuri));
     boost::mutex::scoped_lock lock(_mutex);
@@ -912,32 +912,32 @@ void ControllerClientImpl::CallDelete(const std::string& relativeuri, int expect
     }
 }
 
-std::stringstream& ControllerClientImpl::GetBuffer()
+std::stringstream& PlanningClientImpl::GetBuffer()
 {
     return _buffer;
 }
 
-void ControllerClientImpl::SetDefaultSceneType(const std::string& scenetype)
+void PlanningClientImpl::SetDefaultSceneType(const std::string& scenetype)
 {
     _defaultscenetype = scenetype;
 }
 
-const std::string& ControllerClientImpl::GetDefaultSceneType()
+const std::string& PlanningClientImpl::GetDefaultSceneType()
 {
     return _defaultscenetype;
 }
 
-void ControllerClientImpl::SetDefaultTaskType(const std::string& tasktype)
+void PlanningClientImpl::SetDefaultTaskType(const std::string& tasktype)
 {
     _defaulttasktype = tasktype;
 }
 
-const std::string& ControllerClientImpl::GetDefaultTaskType()
+const std::string& PlanningClientImpl::GetDefaultTaskType()
 {
     return _defaulttasktype;
 }
 
-std::string ControllerClientImpl::GetScenePrimaryKeyFromURI_UTF8(const std::string& uri)
+std::string PlanningClientImpl::GetScenePrimaryKeyFromURI_UTF8(const std::string& uri)
 {
     size_t index = uri.find(":/");
     if (index == std::string::npos) {
@@ -946,31 +946,31 @@ std::string ControllerClientImpl::GetScenePrimaryKeyFromURI_UTF8(const std::stri
     return EscapeString(uri.substr(index+2));
 }
 
-std::string ControllerClientImpl::GetScenePrimaryKeyFromURI_UTF16(const std::wstring& uri)
+std::string PlanningClientImpl::GetScenePrimaryKeyFromURI_UTF16(const std::wstring& uri)
 {
     std::string utf8line;
     utf8::utf16to8(uri.begin(), uri.end(), std::back_inserter(utf8line));
     return GetScenePrimaryKeyFromURI_UTF8(utf8line);
 }
 
-std::string ControllerClientImpl::GetPrimaryKeyFromName_UTF8(const std::string& name)
+std::string PlanningClientImpl::GetPrimaryKeyFromName_UTF8(const std::string& name)
 {
     return EscapeString(name);
 }
 
-std::string ControllerClientImpl::GetPrimaryKeyFromName_UTF16(const std::wstring& name)
+std::string PlanningClientImpl::GetPrimaryKeyFromName_UTF16(const std::wstring& name)
 {
     std::string name_utf8;
     utf8::utf16to8(name.begin(), name.end(), std::back_inserter(name_utf8));
     return GetPrimaryKeyFromName_UTF8(name_utf8);
 }
 
-std::string ControllerClientImpl::GetNameFromPrimaryKey_UTF8(const std::string& pk)
+std::string PlanningClientImpl::GetNameFromPrimaryKey_UTF8(const std::string& pk)
 {
     return UnescapeString(pk);
 }
 
-std::wstring ControllerClientImpl::GetNameFromPrimaryKey_UTF16(const std::string& pk)
+std::wstring PlanningClientImpl::GetNameFromPrimaryKey_UTF16(const std::string& pk)
 {
     std::string utf8 = GetNameFromPrimaryKey_UTF8(pk);
     std::wstring utf16;
@@ -978,7 +978,7 @@ std::wstring ControllerClientImpl::GetNameFromPrimaryKey_UTF16(const std::string
     return utf16;
 }
 
-std::string ControllerClientImpl::CreateObjectGeometry(const std::string& objectPk, const std::string& geometryName, const std::string& linkPk, const std::string& geomtype, double timeout)
+std::string PlanningClientImpl::CreateObjectGeometry(const std::string& objectPk, const std::string& geometryName, const std::string& linkPk, const std::string& geomtype, double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     const std::string geometryData("{\"name\":\"" + geometryName + "\", \"linkpk\":\"" + linkPk + "\", \"geomtype\": \"" + geomtype + "\"}");
@@ -988,7 +988,7 @@ std::string ControllerClientImpl::CreateObjectGeometry(const std::string& object
     return GetJsonValueByKey<std::string>(pt, "pk");
 }
 
-std::string ControllerClientImpl::CreateIkParam(const std::string& objectPk, const std::string& name, const std::string& iktype, double timeout)
+std::string PlanningClientImpl::CreateIkParam(const std::string& objectPk, const std::string& name, const std::string& iktype, double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     const std::string ikparamData("{\"name\":\"" + name + "\", \"iktype\":\"" + iktype + "\"}");
@@ -998,7 +998,7 @@ std::string ControllerClientImpl::CreateIkParam(const std::string& objectPk, con
     return GetJsonValueByKey<std::string>(pt, "pk");
 }
 
-std::string ControllerClientImpl::CreateLink(const std::string& objectPk, const std::string& parentlinkPk, const std::string& name, const Real quaternion[4], const Real translate[3], double timeout)
+std::string PlanningClientImpl::CreateLink(const std::string& objectPk, const std::string& parentlinkPk, const std::string& name, const Real quaternion[4], const Real translate[3], double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     std::string data(str(boost::format("{\"name\":\"%s\", \"quaternion\":[%.15f,%.15f,%.15f,%.15f], \"translate\":[%.15f,%.15f,%.15f]")%name%quaternion[0]%quaternion[1]%quaternion[2]%quaternion[3]%translate[0]%translate[1]%translate[2]));
@@ -1012,7 +1012,7 @@ std::string ControllerClientImpl::CreateLink(const std::string& objectPk, const 
     return GetJsonValueByKey<std::string>(pt, "pk");
 }
 
-std::string ControllerClientImpl::SetObjectGeometryMesh(const std::string& objectPk, const std::string& geometryPk, const std::vector<unsigned char>& meshData, const std::string& unit, double timeout)
+std::string PlanningClientImpl::SetObjectGeometryMesh(const std::string& objectPk, const std::string& geometryPk, const std::vector<unsigned char>& meshData, const std::string& unit, double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     const std::string uri(str(boost::format("object/%s/geometry/%s/?unit=%s")%objectPk%geometryPk%unit));
@@ -1020,7 +1020,7 @@ std::string ControllerClientImpl::SetObjectGeometryMesh(const std::string& objec
     return GetJsonValueByKey<std::string>(pt, "pk");
 }
 
-int ControllerClientImpl::_WriteStringStreamCallback(char *data, size_t size, size_t nmemb, std::stringstream *writerData)
+int PlanningClientImpl::_WriteStringStreamCallback(char *data, size_t size, size_t nmemb, std::stringstream *writerData)
 {
     if (writerData == NULL) {
         return 0;
@@ -1029,7 +1029,7 @@ int ControllerClientImpl::_WriteStringStreamCallback(char *data, size_t size, si
     return size * nmemb;
 }
 
-int ControllerClientImpl::_WriteOStreamCallback(char *data, size_t size, size_t nmemb, std::ostream *writerData)
+int PlanningClientImpl::_WriteOStreamCallback(char *data, size_t size, size_t nmemb, std::ostream *writerData)
 {
     if (writerData == NULL) {
         return 0;
@@ -1038,7 +1038,7 @@ int ControllerClientImpl::_WriteOStreamCallback(char *data, size_t size, size_t 
     return size * nmemb;
 }
 
-int ControllerClientImpl::_WriteVectorCallback(char *data, size_t size, size_t nmemb, std::vector<unsigned char> *writerData)
+int PlanningClientImpl::_WriteVectorCallback(char *data, size_t size, size_t nmemb, std::vector<unsigned char> *writerData)
 {
     if (writerData == NULL) {
         return 0;
@@ -1047,7 +1047,7 @@ int ControllerClientImpl::_WriteVectorCallback(char *data, size_t size, size_t n
     return size * nmemb;
 }
 
-int ControllerClientImpl::_ReadIStreamCallback(char *data, size_t size, size_t nmemb, std::istream *readerData)
+int PlanningClientImpl::_ReadIStreamCallback(char *data, size_t size, size_t nmemb, std::istream *readerData)
 {
     if (readerData == NULL) {
         return 0;
@@ -1055,7 +1055,7 @@ int ControllerClientImpl::_ReadIStreamCallback(char *data, size_t size, size_t n
     return readerData->read(data, size*nmemb).gcount();
 }
 
-void ControllerClientImpl::_SetupHTTPHeadersJSON()
+void PlanningClientImpl::_SetupHTTPHeadersJSON()
 {
     // set the header to only send json
     std::string s = std::string("Content-Type: application/json; charset=") + _charset;
@@ -1079,7 +1079,7 @@ void ControllerClientImpl::_SetupHTTPHeadersJSON()
     }
 }
 
-void ControllerClientImpl::_SetupHTTPHeadersSTL()
+void PlanningClientImpl::_SetupHTTPHeadersSTL()
 {
     // set the header to only send stl
     std::string s = std::string("Content-Type: application/sla");
@@ -1099,7 +1099,7 @@ void ControllerClientImpl::_SetupHTTPHeadersSTL()
     }
 }
 
-void ControllerClientImpl::_SetupHTTPHeadersMultipartFormData()
+void PlanningClientImpl::_SetupHTTPHeadersMultipartFormData()
 {
     // set the header to only send stl
     std::string s = std::string("Content-Type: multipart/form-data");
@@ -1119,7 +1119,7 @@ void ControllerClientImpl::_SetupHTTPHeadersMultipartFormData()
     }
 }
 
-std::string ControllerClientImpl::_EncodeWithoutSeparator(const std::string& raw)
+std::string PlanningClientImpl::_EncodeWithoutSeparator(const std::string& raw)
 {
     std::string output;
     size_t startindex = 0;
@@ -1138,7 +1138,7 @@ std::string ControllerClientImpl::_EncodeWithoutSeparator(const std::string& raw
     return output;
 }
 
-void ControllerClientImpl::_EnsureWebDAVDirectories(const std::string& relativeuri, double timeout)
+void PlanningClientImpl::_EnsureWebDAVDirectories(const std::string& relativeuri, double timeout)
 {
     if (relativeuri.empty()) {
         return;
@@ -1202,7 +1202,7 @@ void ControllerClientImpl::_EnsureWebDAVDirectories(const std::string& relativeu
     }
 }
 
-std::string ControllerClientImpl::_PrepareDestinationURI_UTF8(const std::string& rawuri, bool bEnsurePath, bool bEnsureSlash, bool bIsDirectory)
+std::string PlanningClientImpl::_PrepareDestinationURI_UTF8(const std::string& rawuri, bool bEnsurePath, bool bEnsureSlash, bool bIsDirectory)
 {
     std::string baseuploaduri;
     if( rawuri.size() >= 7 && rawuri.substr(0,7) == "mujin:/" ) {
@@ -1236,7 +1236,7 @@ std::string ControllerClientImpl::_PrepareDestinationURI_UTF8(const std::string&
     return baseuploaduri;
 }
 
-std::string ControllerClientImpl::_PrepareDestinationURI_UTF16(const std::wstring& rawuri_utf16, bool bEnsurePath, bool bEnsureSlash, bool bIsDirectory)
+std::string PlanningClientImpl::_PrepareDestinationURI_UTF16(const std::wstring& rawuri_utf16, bool bEnsurePath, bool bEnsureSlash, bool bIsDirectory)
 {
     std::string baseuploaduri;
     std::string desturi_utf8;
@@ -1273,69 +1273,69 @@ std::string ControllerClientImpl::_PrepareDestinationURI_UTF16(const std::wstrin
     return baseuploaduri;
 }
 
-void ControllerClientImpl::UploadFileToController_UTF8(const std::string& filename, const std::string& desturi)
+void PlanningClientImpl::UploadFileToController_UTF8(const std::string& filename, const std::string& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _UploadFileToController_UTF8(filename, _PrepareDestinationURI_UTF8(desturi, false));
 }
 
-void ControllerClientImpl::UploadFileToController_UTF16(const std::wstring& filename_utf16, const std::wstring& desturi_utf16)
+void PlanningClientImpl::UploadFileToController_UTF16(const std::wstring& filename_utf16, const std::wstring& desturi_utf16)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _UploadFileToController_UTF16(filename_utf16, _PrepareDestinationURI_UTF16(desturi_utf16, false));
 }
 
-void ControllerClientImpl::UploadDataToController_UTF8(const void* data, size_t size, const std::string& desturi)
+void PlanningClientImpl::UploadDataToController_UTF8(const void* data, size_t size, const std::string& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     const std::string filename = _PrepareDestinationURI_UTF8(desturi, false).substr(_basewebdavuri.size());
     _UploadDataToControllerViaForm(data, size, filename, _baseuri + "fileupload");
 }
 
-void ControllerClientImpl::UploadDataToController_UTF16(const void* data, size_t size, const std::wstring& desturi)
+void PlanningClientImpl::UploadDataToController_UTF16(const void* data, size_t size, const std::wstring& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     const std::string filename = _PrepareDestinationURI_UTF16(desturi, false).substr(_basewebdavuri.size());
     _UploadDataToControllerViaForm(data, size, filename, _baseuri + "fileupload");
 }
 
-void ControllerClientImpl::UploadDirectoryToController_UTF8(const std::string& copydir, const std::string& desturi)
+void PlanningClientImpl::UploadDirectoryToController_UTF8(const std::string& copydir, const std::string& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _UploadDirectoryToController_UTF8(copydir, _PrepareDestinationURI_UTF8(desturi, false, false, true));
 }
 
-void ControllerClientImpl::UploadDirectoryToController_UTF16(const std::wstring& copydir, const std::wstring& desturi)
+void PlanningClientImpl::UploadDirectoryToController_UTF16(const std::wstring& copydir, const std::wstring& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _UploadDirectoryToController_UTF16(copydir, _PrepareDestinationURI_UTF16(desturi, false, false, true));
 }
 
-void ControllerClientImpl::DownloadFileFromController_UTF8(const std::string& desturi, std::vector<unsigned char>& vdata)
+void PlanningClientImpl::DownloadFileFromController_UTF8(const std::string& desturi, std::vector<unsigned char>& vdata)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _CallGet(_PrepareDestinationURI_UTF8(desturi, false), vdata);
 }
 
-void ControllerClientImpl::DownloadFileFromController_UTF16(const std::wstring& desturi, std::vector<unsigned char>& vdata)
+void PlanningClientImpl::DownloadFileFromController_UTF16(const std::wstring& desturi, std::vector<unsigned char>& vdata)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _CallGet(_PrepareDestinationURI_UTF16(desturi, false), vdata);
 }
 
-void ControllerClientImpl::DownloadFileFromControllerIfModifiedSince_UTF8(const std::string& desturi, long localtimeval, long& remotetimeval, std::vector<unsigned char>& vdata, double timeout)
+void PlanningClientImpl::DownloadFileFromControllerIfModifiedSince_UTF8(const std::string& desturi, long localtimeval, long& remotetimeval, std::vector<unsigned char>& vdata, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DownloadFileFromController(_PrepareDestinationURI_UTF8(desturi, false), localtimeval, remotetimeval, vdata, timeout);
 }
 
-void ControllerClientImpl::DownloadFileFromControllerIfModifiedSince_UTF16(const std::wstring& desturi, long localtimeval, long& remotetimeval, std::vector<unsigned char>& vdata, double timeout)
+void PlanningClientImpl::DownloadFileFromControllerIfModifiedSince_UTF16(const std::wstring& desturi, long localtimeval, long& remotetimeval, std::vector<unsigned char>& vdata, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DownloadFileFromController(_PrepareDestinationURI_UTF16(desturi, false), localtimeval, remotetimeval, vdata, timeout);
 }
 
-long ControllerClientImpl::GetModifiedTime(const std::string& uri, double timeout)
+long PlanningClientImpl::GetModifiedTime(const std::string& uri, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
 
@@ -1364,7 +1364,7 @@ long ControllerClientImpl::GetModifiedTime(const std::string& uri, double timeou
     return filetime;
 }
 
-void ControllerClientImpl::_DownloadFileFromController(const std::string& desturi, long localtimeval, long &remotetimeval, std::vector<unsigned char>& outputdata, double timeout)
+void PlanningClientImpl::_DownloadFileFromController(const std::string& desturi, long localtimeval, long &remotetimeval, std::vector<unsigned char>& outputdata, double timeout)
 {
     remotetimeval = 0;
 
@@ -1393,21 +1393,21 @@ void ControllerClientImpl::_DownloadFileFromController(const std::string& destur
     }
 }
 
-void ControllerClientImpl::SaveBackup(std::ostream& outputStream, bool config, bool media, const std::string& backupscenepks, double timeout)
+void PlanningClientImpl::SaveBackup(std::ostream& outputStream, bool config, bool media, const std::string& backupscenepks, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     std::string query=std::string("?config=")+(config ? "true" : "false")+"&media="+(media ? "true" : "false")+"&backupscenepks="+backupscenepks;
     _CallGet(_baseuri+"backup/"+query, outputStream, 200, timeout);
 }
 
-void ControllerClientImpl::RestoreBackup(std::istream& inputStream, bool config, bool media, double timeout)
+void PlanningClientImpl::RestoreBackup(std::istream& inputStream, bool config, bool media, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     std::string query=std::string("?config=")+(config ? "true" : "false")+"&media="+(media ? "true" : "false");
     _UploadFileToControllerViaForm(inputStream, "", _baseuri+"backup/"+query, timeout);
 }
 
-void ControllerClientImpl::Upgrade(std::istream& inputStream, bool autorestart, bool uploadonly, double timeout)
+void PlanningClientImpl::Upgrade(std::istream& inputStream, bool autorestart, bool uploadonly, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     std::string query=std::string("?autorestart=")+(autorestart ? "1" : "0")+("&uploadonly=")+(uploadonly ? "1" : "0");
@@ -1434,7 +1434,7 @@ void ControllerClientImpl::Upgrade(std::istream& inputStream, bool autorestart, 
     }
 }
 
-bool ControllerClientImpl::GetUpgradeStatus(std::string& status, double &progress, double timeout)
+bool PlanningClientImpl::GetUpgradeStatus(std::string& status, double &progress, double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -1447,55 +1447,55 @@ bool ControllerClientImpl::GetUpgradeStatus(std::string& status, double &progres
     return true;
 }
 
-void ControllerClientImpl::CancelUpgrade(double timeout)
+void PlanningClientImpl::CancelUpgrade(double timeout)
 {
     CallDelete(_baseuri+"upgrade/", 200, timeout);
 }
 
-void ControllerClientImpl::Reboot(double timeout)
+void PlanningClientImpl::Reboot(double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     rapidjson::Document pt(rapidjson::kObjectType);
     _CallPost(_baseuri+"reboot/", "", pt, 200, timeout);
 }
 
-void ControllerClientImpl::DeleteAllScenes(double timeout)
+void PlanningClientImpl::DeleteAllScenes(double timeout)
 {
     boost::mutex::scoped_lock lock(_mutex);
     rapidjson::Document pt(rapidjson::kObjectType);
     CallDelete("scene/", 204, timeout);
 }
 
-void ControllerClientImpl::DeleteAllITLPrograms(double timeout)
+void PlanningClientImpl::DeleteAllITLPrograms(double timeout)
 {
     CallDelete("itl/", 204, timeout);
 }
 
-void ControllerClientImpl::DeleteFileOnController_UTF8(const std::string& desturi)
+void PlanningClientImpl::DeleteFileOnController_UTF8(const std::string& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DeleteFileOnController(_PrepareDestinationURI_UTF8(desturi, false));
 }
 
-void ControllerClientImpl::DeleteFileOnController_UTF16(const std::wstring& desturi)
+void PlanningClientImpl::DeleteFileOnController_UTF16(const std::wstring& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DeleteFileOnController(_PrepareDestinationURI_UTF16(desturi, false));
 }
 
-void ControllerClientImpl::DeleteDirectoryOnController_UTF8(const std::string& desturi)
+void PlanningClientImpl::DeleteDirectoryOnController_UTF8(const std::string& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DeleteDirectoryOnController(_PrepareDestinationURI_UTF8(desturi, false, false, true));
 }
 
-void ControllerClientImpl::DeleteDirectoryOnController_UTF16(const std::wstring& desturi)
+void PlanningClientImpl::DeleteDirectoryOnController_UTF16(const std::wstring& desturi)
 {
     boost::mutex::scoped_lock lock(_mutex);
     _DeleteDirectoryOnController(_PrepareDestinationURI_UTF16(desturi, false, false, true));
 }
 
-void ControllerClientImpl::ModifySceneAddReferenceObjectPK(const std::string &scenepk, const std::string &referenceobjectpk, double timeout)
+void PlanningClientImpl::ModifySceneAddReferenceObjectPK(const std::string &scenepk, const std::string &referenceobjectpk, double timeout)
 {
     rapidjson::Document pt, pt2;
     rapidjson::Value value;
@@ -1512,7 +1512,7 @@ void ControllerClientImpl::ModifySceneAddReferenceObjectPK(const std::string &sc
     _CallPost(_baseuri + "referenceobjectpks/add/", DumpJson(pt), pt2, 200, timeout);
 }
 
-void ControllerClientImpl::ModifySceneRemoveReferenceObjectPK(const std::string &scenepk, const std::string &referenceobjectpk, double timeout)
+void PlanningClientImpl::ModifySceneRemoveReferenceObjectPK(const std::string &scenepk, const std::string &referenceobjectpk, double timeout)
 {
     rapidjson::Document pt, pt2;
     rapidjson::Value value;
@@ -1529,7 +1529,7 @@ void ControllerClientImpl::ModifySceneRemoveReferenceObjectPK(const std::string 
     _CallPost(_baseuri + "referenceobjectpks/remove/", DumpJson(pt), pt2, 200, timeout);
 }
 
-void ControllerClientImpl::_UploadDirectoryToController_UTF8(const std::string& copydir_utf8, const std::string& rawuri)
+void PlanningClientImpl::_UploadDirectoryToController_UTF8(const std::string& copydir_utf8, const std::string& rawuri)
 {
     BOOST_ASSERT(rawuri.size()>0 && copydir_utf8.size()>0);
 
@@ -1643,7 +1643,7 @@ void ControllerClientImpl::_UploadDirectoryToController_UTF8(const std::string& 
 #endif // defined(_WIN32) || defined(_WIN64)
 }
 
-void ControllerClientImpl::_UploadDirectoryToController_UTF16(const std::wstring& copydir_utf16, const std::string& rawuri)
+void PlanningClientImpl::_UploadDirectoryToController_UTF16(const std::wstring& copydir_utf16, const std::string& rawuri)
 {
     BOOST_ASSERT(rawuri.size()>0 && copydir_utf16.size()>0);
 
@@ -1767,7 +1767,7 @@ void ControllerClientImpl::_UploadDirectoryToController_UTF16(const std::wstring
 #endif // defined(_WIN32) || defined(_WIN64)
 }
 
-void ControllerClientImpl::_UploadFileToController_UTF8(const std::string& filename, const std::string& uri)
+void PlanningClientImpl::_UploadFileToController_UTF8(const std::string& filename, const std::string& uri)
 {
     // the dest filename of the upload is determined by stripping the leading _basewebdavuri
     if( uri.size() < _basewebdavuri.size() || uri.substr(0,_basewebdavuri.size()) != _basewebdavuri ) {
@@ -1785,7 +1785,7 @@ void ControllerClientImpl::_UploadFileToController_UTF8(const std::string& filen
     _UploadFileToControllerViaForm(fin, filenameoncontroller, _baseuri + "fileupload");
 }
 
-void ControllerClientImpl::_UploadFileToController_UTF16(const std::wstring& filename, const std::string& uri)
+void PlanningClientImpl::_UploadFileToController_UTF16(const std::wstring& filename, const std::string& uri)
 {
     // the dest filename of the upload is determined by stripping the leading _basewebdavuri
     if( uri.size() < _basewebdavuri.size() || uri.substr(0,_basewebdavuri.size()) != _basewebdavuri ) {
@@ -1804,7 +1804,7 @@ void ControllerClientImpl::_UploadFileToController_UTF16(const std::wstring& fil
     _UploadFileToControllerViaForm(fin, filenameoncontroller, _baseuri + "fileupload");
 }
 
-void ControllerClientImpl::_UploadFileToControllerViaForm(std::istream& inputStream, const std::string& filename, const std::string& endpoint, double timeout)
+void PlanningClientImpl::_UploadFileToControllerViaForm(std::istream& inputStream, const std::string& filename, const std::string& endpoint, double timeout)
 {
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_URL, NULL, endpoint.c_str());
     _buffer.clear();
@@ -1867,7 +1867,7 @@ void ControllerClientImpl::_UploadFileToControllerViaForm(std::istream& inputStr
     }
 }
 
-void ControllerClientImpl::_UploadDataToControllerViaForm(const void* data, size_t size, const std::string& filename, const std::string& endpoint, double timeout)
+void PlanningClientImpl::_UploadDataToControllerViaForm(const void* data, size_t size, const std::string& filename, const std::string& endpoint, double timeout)
 {
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_URL, NULL, endpoint.c_str());
     _buffer.clear();
@@ -1905,7 +1905,7 @@ void ControllerClientImpl::_UploadDataToControllerViaForm(const void* data, size
     }
 }
 
-void ControllerClientImpl::_DeleteFileOnController(const std::string& desturi)
+void PlanningClientImpl::_DeleteFileOnController(const std::string& desturi)
 {
     MUJIN_LOG_DEBUG(str(boost::format("delete %s")%desturi))
 
@@ -1919,7 +1919,7 @@ void ControllerClientImpl::_DeleteFileOnController(const std::string& desturi)
     _CallPost(_baseuri+"file/delete/?filename="+filename, "", pt, 200, 5.0);
 }
 
-void ControllerClientImpl::_DeleteDirectoryOnController(const std::string& desturi)
+void PlanningClientImpl::_DeleteDirectoryOnController(const std::string& desturi)
 {
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_CUSTOMREQUEST, NULL, "DELETE");
     CURL_OPTION_SAVE_SETTER(_curl, CURLOPT_HTTPHEADER, NULL, _httpheadersjson);
@@ -1930,7 +1930,7 @@ void ControllerClientImpl::_DeleteDirectoryOnController(const std::string& destu
     MUJIN_LOG_INFO("response code: " << http_code);
 }
 
-size_t ControllerClientImpl::_ReadUploadCallback(void *ptr, size_t size, size_t nmemb, void *stream)
+size_t PlanningClientImpl::_ReadUploadCallback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     // in real-world cases, this would probably get this data differently as this fread() stuff is exactly what the library already would do by default internally
     size_t nread = fread(ptr, size, nmemb, (FILE*)stream);
@@ -1938,7 +1938,7 @@ size_t ControllerClientImpl::_ReadUploadCallback(void *ptr, size_t size, size_t 
     return nread;
 }
 
-size_t ControllerClientImpl::_ReadInMemoryUploadCallback(void *ptr, size_t size, size_t nmemb, void *stream)
+size_t PlanningClientImpl::_ReadInMemoryUploadCallback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
     std::pair<std::vector<unsigned char>::const_iterator, size_t>* pstreamdata = static_cast<std::pair<std::vector<unsigned char>::const_iterator, size_t>*>(stream);
     size_t nBytesToRead = size*nmemb;
@@ -1953,7 +1953,7 @@ size_t ControllerClientImpl::_ReadInMemoryUploadCallback(void *ptr, size_t size,
     return nBytesToRead;
 }
 
-void ControllerClientImpl::GetDebugInfos(std::vector<DebugResourcePtr>& debuginfos, double timeout)
+void PlanningClientImpl::GetDebugInfos(std::vector<DebugResourcePtr>& debuginfos, double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     CallGet(str(boost::format("debug/?format=json&limit=0")), pt, 200, timeout);
@@ -1975,7 +1975,7 @@ void ControllerClientImpl::GetDebugInfos(std::vector<DebugResourcePtr>& debuginf
     }
 }
 
-void ControllerClientImpl::ListFilesInController(std::vector<FileEntry>& fileentries, const std::string &dirname, double timeout)
+void PlanningClientImpl::ListFilesInController(std::vector<FileEntry>& fileentries, const std::string &dirname, double timeout)
 {
     rapidjson::Document pt(rapidjson::kObjectType);
     _CallGet(_baseuri+"file/list/?dirname="+dirname, pt, 200, timeout);
