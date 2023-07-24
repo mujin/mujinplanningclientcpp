@@ -13,27 +13,18 @@
 # limitations under the License.
 
 include_directories(${CURL_INCLUDE_DIRS} ${LOG4CXX_INCLUDEDIR})
-if (libzmq_FOUND)
-  include_directories(${libzmq_INCLUDE_DIRS})
-endif()
+include_directories(${libzmq_INCLUDE_DIRS})
 
 link_directories(${MUJINPLANNINGCLIENT_LINK_DIRS})
 
 set(SOURCE_FILES
   boost_assertion_failed.cpp
-  binpickingtask.cpp
   common.cpp
   common.h
-  planningclientimpl.cpp
-  planningclientimpl.h
   mujinplanningclient.cpp
   mujindefinitions.cpp
   mujinjson.cpp
   utf8.h )
-
-if (libzmq_FOUND)
-  set(SOURCE_FILES ${SOURCE_FILES} binpickingtaskzmq.h binpickingtaskzmq.cpp mujinzmq.cpp)
-endif()
 
 add_library(libmujinplanningclient SHARED ${SOURCE_FILES})
 if( EXTRA_MSVC_DEPEND )

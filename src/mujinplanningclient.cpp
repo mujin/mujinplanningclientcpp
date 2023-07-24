@@ -19,11 +19,8 @@
 #include <boost/algorithm/string/replace.hpp>
 #endif
 #include <boost/thread.hpp> // for sleep
-#include "mujinplanningclient/binpickingtask.h"
 
-#ifdef MUJIN_USEZMQ
 #include "mujinplanningclient/zmq.hpp"
-#endif
 
 #ifdef _WIN32
 #include <float.h>
@@ -39,10 +36,6 @@
 #include <rapidjson/stringbuffer.h>
 #include "mujinplanningclient/mujinjson.h"
 
-#ifdef MUJIN_USEZMQ
-#include "binpickingtaskzmq.h"
-#endif
-
 #include "logging.h"
 #include "mujinplanningclient/mujinjson.h"
 
@@ -54,26 +47,6 @@ namespace {
 
 using namespace mujinjson;
 using namespace utils;
-
-std::string GetPkThroughRedirects(WebstackClientPtr pWebstack, const std::vector<std::string>& urls, const std::string& initialPk) {
-    std::string pk = initialPk;
-    rapidjson::Document result;
-    for (const std::string& url: urls) {
-        pWebstack->CallGet(str(boost::format(url)%pk), result);
-        if (result.IsObject()
-            && result.HashMember("objects")
-            && result["objects"].IsArray()
-            && result["objects"].size() > 0) {
-            rapidjson::Value& objects = result["objects"];
-            pk = GetJsonValueByKey<std::string>(objects[0], "pk");
-            std::string error GetJsonValueByKey<std::string>(objects[0], "errormessage");
-            if (error.size() > 0 && error != "succeed") {
-                throw MujinException(error, MEC_BinPickingError);
-            }
-        }
-    }
-    return pk;
-}
 
 void SetMapTaskParameters(std::stringstream &ss, const std::map<std::string, std::string> &params)
 {
@@ -157,6 +130,23 @@ void SetTrajectory(const rapidjson::Value &pt,
         throw MujinException("trajectory is not available in output", MEC_Failed);
     }
     *pTraj = GetJsonValueByPath<std::string>(pt, "/output/trajectory");
+}
+
+void LoadAABBFromJsonValue(const rapidjson::Value& rAABB, mujin::AABB& aabb)
+{
+    BOOST_ASSERT(rAABB.IsObject());
+    BOOST_ASSERT(rAABB.HasMember("pos"));
+    BOOST_ASSERT(rAABB.HasMember("extents"));
+    const rapidjson::Value& rPos = rAABB["pos"];
+    BOOST_ASSERT(rPos.IsArray());
+    mujinjson::LoadJsonValue(rPos[0], aabb.pos[0]);
+    mujinjson::LoadJsonValue(rPos[1], aabb.pos[1]);
+    mujinjson::LoadJsonValue(rPos[2], aabb.pos[2]);
+    const rapidjson::Value& rExtents = rAABB["extents"];
+    BOOST_ASSERT(rExtents.IsArray());
+    mujinjson::LoadJsonValue(rExtents[0], aabb.extents[0]);
+    mujinjson::LoadJsonValue(rExtents[1], aabb.extents[1]);
+    mujinjson::LoadJsonValue(rExtents[2], aabb.extents[2]);
 }
 
 }  // end namespace
@@ -464,7 +454,7 @@ void BinPickingTaskResource::ResultGetInstObjectAndSensorInfo::Parse(const rapid
         for (rapidjson::Document::ConstMemberIterator itlink = it->value.MemberBegin(); itlink != it->value.MemberEnd(); itlink++) {
             LoadJsonValue(itlink->name, sensorSelectionInfo.sensorLinkName);
             Transform transform;
-            RobotResource::AttachedSensorResource::SensorData sensordata;
+            SensorData sensordata;
             LoadJsonValueByKey(itlink->value, "translation", transform.translate);
             LoadJsonValueByKey(itlink->value, "quaternion", transform.quaternion);
 
@@ -495,126 +485,15 @@ void BinPickingTaskResource::ResultGetInstObjectAndSensorInfo::Parse(const rapid
     }
 }
 
-void ExtractEnvironmentStateFromPTree(const rapidjson::Value& envstatejson, EnvironmentState& envstate)
-{
-    envstate.clear();
-    for (rapidjson::Document::ConstValueIterator it = envstatejson.Begin(); it != envstatejson.End(); ++it) {
-        InstanceObjectState objstate;
-        std::string name = GetJsonValueByKey<std::string>(*it, "name");
-        std::vector<Real> quat = GetJsonValueByKey<std::vector<Real> >(*it, "quat_");
-        BOOST_ASSERT(quat.size() == 4);
-        Real dist2 = 0;
-        for (int i = 0; i < 4; i++ ) {
-            Real f = quat[i] * quat[i];
-            dist2 += f;
-            objstate.transform.quaternion[i] = f;
-        }
-        // normalize the quaternion
-        if( dist2 > 0 ) {
-            Real fnorm =1/std::sqrt(dist2);
-            objstate.transform.quaternion[0] *= fnorm;
-            objstate.transform.quaternion[1] *= fnorm;
-            objstate.transform.quaternion[2] *= fnorm;
-            objstate.transform.quaternion[3] *= fnorm;
-        }
-        LoadJsonValueByKey(*it, "translation_", objstate.transform.translate);
-        LoadJsonValueByKey(*it, "dofvalues", objstate.dofvalues);
-        envstate[name] = objstate;
-    }
-}
-
-void SerializeEnvironmentStateToJSON(const EnvironmentState& envstate, std::ostream& os)
-{
-    os << "[";
-    bool bhaswritten = false;
-    FOREACHC(itstate, envstate) {
-        if( itstate->first.size() > 0 ) {
-            if( bhaswritten ) {
-                os << ",";
-            }
-            os << "{ \"name\":\"" << itstate->first << "\", \"translation_\":[";
-            for(int i = 0; i < 3; ++i) {
-                if( i > 0 ) {
-                    os << ",";
-                }
-                os << itstate->second.transform.translate[i];
-            }
-            os << "], \"quat_\":[";
-            for(int i = 0; i < 4; ++i) {
-                if( i > 0 ) {
-                    os << ",";
-                }
-                os << itstate->second.transform.quaternion[i];
-            }
-            os << "], \"dofvalues\":[";
-            for(size_t i = 0; i < itstate->second.dofvalues.size(); ++i) {
-                if( i > 0 ) {
-                    os << ",";
-                }
-                os << itstate->second.dofvalues.at(i);
-            }
-            os << "] }";
-            bhaswritten = true;
-        }
-    }
-    os << "]";
-}
-
-WebResource::WebResource(PlanningClientPtr controller, const std::string& resourcename, const std::string& pk) : __controller(controller), __resourcename(resourcename), __pk(pk)
-{
-    BOOST_ASSERT(__pk.size()>0);
-}
-
-void WebResource::Set(const std::string& field, const std::string& newvalue, double timeout)
-{
-    throw MujinException("not implemented");
-}
-
-void WebResource::SetJSON(const std::string& json, double timeout)
-{
-    rapidjson::Document pt(rapidjson::kObjectType);
-    _webstackClient->CallPutJSON(str(boost::format("%s/%s/?format=json")%GetResourceName()%GetPrimaryKey()), json, pt, 202, timeout);
-}
-
-void WebResource::Delete(double timeout)
-{
-    GETCONTROLLERIMPL();
-    _webstackClient->CallDelete(str(boost::format("%s/%s/")%GetResourceName()%GetPrimaryKey()), 204, timeout);
-}
-
-void WebResource::Copy(const std::string& newname, int options, double timeout)
-{
-    throw MujinException("not implemented yet");
-}
-
-void WebResource::GetWrap(rapidjson::Document& pt, const std::string& field, double timeout)
-{
-    _webstackClient->CallGet(str(boost::format("%s/%s/?format=json&fields=%s")%GetResourceName()%GetPrimaryKey()%field), pt, 200, timeout);
-}
-
-static void LoadAABBFromJsonValue(const rapidjson::Value& rAABB, mujin::AABB& aabb)
-{
-    BOOST_ASSERT(rAABB.IsObject());
-    BOOST_ASSERT(rAABB.HasMember("pos"));
-    BOOST_ASSERT(rAABB.HasMember("extents"));
-    const rapidjson::Value& rPos = rAABB["pos"];
-    BOOST_ASSERT(rPos.IsArray());
-    mujinjson::LoadJsonValue(rPos[0], aabb.pos[0]);
-    mujinjson::LoadJsonValue(rPos[1], aabb.pos[1]);
-    mujinjson::LoadJsonValue(rPos[2], aabb.pos[2]);
-    const rapidjson::Value& rExtents = rAABB["extents"];
-    BOOST_ASSERT(rExtents.IsArray());
-    mujinjson::LoadJsonValue(rExtents[0], aabb.extents[0]);
-    mujinjson::LoadJsonValue(rExtents[1], aabb.extents[1]);
-    mujinjson::LoadJsonValue(rExtents[2], aabb.extents[2]);
-}
-
 BinPickingTaskResource::BinPickingTaskResource(
-    WebstackClientPtr pWebstack,
     const std::string& pk,
     const std::string& scenepk,
-    const std::string& tasktype)
-    : TaskResource(pWebstack, pk),
+    /// HACK until can think of proper way to send sceneparams
+    const std::string& scenebasename,
+    const std::string& tasktype,
+    const std::string& baseuri,
+    const std::string& userName)
+    : _pk(pk),
       _zmqPort(-1),
       _heartbeatPort(-1),
       _tasktype(tasktype),
@@ -623,7 +502,6 @@ BinPickingTaskResource::BinPickingTaskResource(
     _callerid = str(boost::format("planningclientcpp%s_zmq")%MUJINPLANNINGCLIENT_VERSION_STRING);
     _scenepk = scenepk;
     // get hostname from uri
-    const std::string baseuri = pWebstack->GetBaseUri();
     std::string::const_iterator uriend = baseuri.end();
     // query start
     std::string::const_iterator querystart = std::find(baseuri.begin(), uriend, '?');
@@ -649,8 +527,6 @@ BinPickingTaskResource::BinPickingTaskResource(
     _mujinControllerIp = std::string(hoststart, hostend);
 
     {
-        /// HACK until can think of proper way to send sceneparams
-        std::string scenebasename = pcontroller->GetNameFromPrimaryKey_UTF8(scenepk);
 
         _rSceneParams.SetObject();
         mujinjson::SetJsonValueByKey(_rSceneParams, "scenetype", "mujin");
@@ -663,7 +539,7 @@ BinPickingTaskResource::BinPickingTaskResource(
             MUJIN_MEDIA_ROOT_DIR = pMUJIN_MEDIA_ROOT_DIR;
         }
 
-        std::string scenefilename = MUJIN_MEDIA_ROOT_DIR + std::string("/") + pcontroller->GetUserName() + std::string("/") + scenebasename;
+        std::string scenefilename = MUJIN_MEDIA_ROOT_DIR + std::string("/") + userName + std::string("/") + scenebasename;
         mujinjson::SetJsonValueByKey(_rSceneParams, "scenefilename", scenefilename);
         _sceneparams_json = mujinjson::DumpJson(_rSceneParams);
     }
@@ -677,40 +553,6 @@ BinPickingTaskResource::~BinPickingTaskResource()
     }
 }
 
-void BinPickingTaskResource::Initialize(const std::string& defaultTaskParameters, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
-{
-    if( defaultTaskParameters.size() > 0 ) {
-        _mapTaskParameters.clear();
-        rapidjson::Document d;
-        d.Parse(defaultTaskParameters.c_str());
-        for (rapidjson::Value::ConstMemberIterator it = d.MemberBegin(); it != d.MemberEnd(); ++it) {
-            rapidjson::StringBuffer stringbuffer;
-            rapidjson::Writer<rapidjson::StringBuffer> writer(stringbuffer);
-            it->value.Accept(writer);
-            _mapTaskParameters[it->name.GetString()] = std::string(stringbuffer.GetString(), stringbuffer.GetSize());
-        }
-    }
-
-    _bIsInitialized = true;
-    ParseJson(_rUserInfo, userinfo);
-    _userinfo_json = userinfo;
-    _slaverequestid = slaverequestid;
-
-    InitializeZMQ(reinitializetimeout, timeout);
-
-    _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-    if (!_zmqmujinplanningclient) {
-        throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
-    }
-    if (!_pHeartbeatMonitorThread) {
-        _bShutdownHeartbeatMonitor = false;
-        if (reinitializetimeout > 0 ) {
-            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskZmqResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
-        }
-    }
-}
-
-#ifdef MUJIN_USEZMQ
 void BinPickingTaskResource::Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq, const double reinitializetimeout, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
 {
 
@@ -733,8 +575,16 @@ void BinPickingTaskResource::Initialize(const std::string& defaultTaskParameters
     ParseJson(_rUserInfo, userinfo);
     _userinfo_json = userinfo;
     _slaverequestid = slaverequestid;
+
+    InitializeZMQ(reinitializetimeout, timeout);
+
+    if (!_pHeartbeatMonitorThread) {
+        _bShutdownHeartbeatMonitor = false;
+        if (reinitializetimeout > 0 ) {
+            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
+        }
+    }
 }
-#endif
 
 void BinPickingTaskResource::SetCallerId(const std::string& callerid)
 {
@@ -805,7 +655,7 @@ void BinPickingTaskResource::ExecuteCommand(const std::string& taskparameters, r
     std::string result_ss;
 
     try{
-        _ExecuteCommandZMQ(ss.str(), pt, timeout, getresult);
+        _ExecuteCommandZMQ(ss.str(), rResult, timeout, getresult);
     }
     catch (const MujinException& e) {
         MUJIN_LOG_ERROR(e.what());
@@ -824,23 +674,14 @@ void BinPickingTaskResource::_ExecuteCommandZMQ(const std::string& command, rapi
         throw MujinException("BinPicking task is not initialized, please call Initialzie() first.", MEC_Failed);
     }
 
-    if (!_zmqmujinplanningclient) {
-        MUJIN_LOG_ERROR("zmqplanningclient is not initialized! initialize");
-        _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-    }
-
     std::string result_ss;
     try {
-        result_ss = _zmqmujinplanningclient->Call(command, timeout);
+        result_ss = _CallZMQ(command, timeout);
     }
     catch (const MujinException& e) {
         MUJIN_LOG_ERROR(e.what());
         if (e.GetCode() == MEC_ZMQNoResponse) {
             MUJIN_LOG_INFO("reinitializing zmq connection with the slave");
-            _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-            if (!_zmqmujinplanningclient) {
-                throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
-            }
         } else if (e.GetCode() == MEC_Timeout) {
             throw MujinException("");  // Filled by `ExecuteCommand` callers who can access taskparameters more easily
         }
@@ -922,14 +763,12 @@ void BinPickingTaskResource::UpdateObjects(const std::string& objectname, const 
 
 void BinPickingTaskResource::InitializeZMQ(const double reinitializetimeout, const double timeout)
 {
-#ifdef MUJIN_USEZMQ
     if (!_pHeartbeatMonitorThread) {
         _bShutdownHeartbeatMonitor = false;
         if ( reinitializetimeout > 0) {
             _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
         }
     }
-#endif
 }
 
 void BinPickingTaskResource::AddPointCloudObstacle(const std::vector<float>&vpoints, const Real pointsize, const std::string& name,  const unsigned long long starttimestamp, const unsigned long long endtimestamp, const bool executionverification, const std::string& unit, int isoccluded, const std::string& locationName, const double timeout, bool clampToContainer, CropContainerMarginsXYZXYZPtr pCropContainerMargins, AddPointOffsetInfoPtr pAddPointOffsetInfo)
@@ -951,7 +790,6 @@ void BinPickingTaskResource::AddPointCloudObstacle(const std::vector<float>&vpoi
         _ss << "\"use\": true";
         _ss << "}, ";
     }
-    PointCloudObstacle pointcloudobstacle;
     _ss << std::setprecision(std::numeric_limits<float>::digits10+1); // want to control the size of the JSON file outputted
     // "\"name\": __dynamicobstacle__, \"pointsize\": 0.005, \"points\": []
     _ss << GetJsonString("pointcloudid") << ": " << GetJsonString(name) << ", ";
@@ -1192,24 +1030,14 @@ const std::string& BinPickingTaskResource::_GetCallerId() const
 
 void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout)
 {
-#ifdef MUJIN_USEZMQ
     MUJIN_LOG_DEBUG(str(boost::format("starting controller %s monitoring thread on port %d for slaverequestid=%s.")%_mujinControllerIp%_heartbeatPort%_slaverequestid));
-    boost::shared_ptr<zmq::socket_t>  socket;
-    BinPickingTaskResource::ResultHeartBeat heartbeat;
+    boost::shared_ptr<zmq::socket_t> socket;
     while (!_bShutdownHeartbeatMonitor) {
         if (!!socket) {
             socket->close();
             socket.reset();
         }
-        socket.reset(new zmq::socket_t((*_zmqcontext.get()),ZMQ_SUB));
-        socket->setsockopt(ZMQ_TCP_KEEPALIVE, 1); // turn on tcp keepalive, do these configuration before connect
-        socket->setsockopt(ZMQ_TCP_KEEPALIVE_IDLE, 2); // the interval between the last data packet sent (simple ACKs are not considered data) and the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any further
-        socket->setsockopt(ZMQ_TCP_KEEPALIVE_INTVL, 2); // the interval between subsequential keepalive probes, regardless of what the connection has exchanged in the meantime
-        socket->setsockopt(ZMQ_TCP_KEEPALIVE_CNT, 2); // the number of unacknowledged probes to send before considering the connection dead and notifying the application layer
-        std::stringstream ss; ss << std::setprecision(std::numeric_limits<double>::digits10+1);
-        ss << _heartbeatPort;
-        socket->connect (("tcp://"+ _mujinControllerIp+":"+ss.str()).c_str());
-        socket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+        socket = _CreateZMQSocket();
 
         zmq::pollitem_t pollitem;
         memset(&pollitem, 0, sizeof(zmq::pollitem_t));
@@ -1226,15 +1054,10 @@ void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializeti
                 try{
                     std::stringstream replystring_ss(replystring);
                     ParseJson(pt, replystring_ss.str());
-                    heartbeat.Parse(pt);
-                    {
-                        _taskstate = heartbeat.taskstate;
-                    }
-                    //BINPICKING_LOG_ERROR(replystring);
 
                     std::string status;
                     LoadJsonValueByKey(pt, "status", status);
-                    if (status != "lost" && heartbeat.status.size() > 1) {
+                    if (status != "lost" && status.size() > 1) {
                         lastheartbeat = GetMilliTime();
                     }
                     if (pt.HasMember("slavestates") && _slaverequestid.size() > 0) {
@@ -1265,9 +1088,6 @@ void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializeti
         }
     }
     MUJIN_LOG_DEBUG(str(boost::format("Stopped controller %s monitoring thread on port %d for slaverequestid=%s.")%_mujinControllerIp%_heartbeatPort%_slaverequestid));
-#else
-    MUJIN_LOG_ERROR("cannot create heartbeat monitor since not compiled with libzmq");
-#endif
 }
 
 void BinPickingTaskResource::_LogTaskParametersAndThrow(const std::string& taskparameters) {
@@ -1280,6 +1100,165 @@ void BinPickingTaskResource::_LogTaskParametersAndThrow(const std::string& taskp
     throw MujinException(boost::str(boost::format("Timed out receiving response of command with taskparameters=%s...")%errstr));
 }
 
+boost::shared_ptr<zmq::socket_t> BinPickingTaskResource::_CreateZMQSocket()
+{
+    auto socket = boost::make_shared<zmq::socket_t>((*_zmqcontext.get()),ZMQ_SUB);
+    socket->setsockopt(ZMQ_TCP_KEEPALIVE, 1); // turn on tcp keepalive, do these configuration before connect
+    socket->setsockopt(ZMQ_TCP_KEEPALIVE_IDLE, 2); // the interval between the last data packet sent (simple ACKs are not considered data) and the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any further
+    socket->setsockopt(ZMQ_TCP_KEEPALIVE_INTVL, 2); // the interval between subsequential keepalive probes, regardless of what the connection has exchanged in the meantime
+    socket->setsockopt(ZMQ_TCP_KEEPALIVE_CNT, 2); // the number of unacknowledged probes to send before considering the connection dead and notifying the application layer
+    std::stringstream ss; ss << std::setprecision(std::numeric_limits<double>::digits10+1);
+    ss << _heartbeatPort;
+    socket->connect (("tcp://"+ _mujinControllerIp+":"+ss.str()).c_str());
+    socket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    return socket;
+}
+
+std::string BinPickingTaskResource::_CallZMQ(const std::string& msg, const double timeout)
+{
+    boost::shared_ptr<zmq::socket_t> socket = _CreateZMQSocket();
+    //send
+    zmq::message_t request (msg.size());
+    // std::cout << msg.size() << std::endl;
+    // std::cout << msg << std::endl;
+    memcpy ((void *) request.data (), msg.c_str(), msg.size());
+
+    uint64_t starttime = GetMilliTime();
+    bool recreatedonce = false;
+    while (GetMilliTime() - starttime < timeout*1000.0) {
+        try {
+            socket->send(request);
+            break;
+        } catch (const zmq::error_t& e) {
+            if (e.num() == EAGAIN) {
+                MUJIN_LOG_ERROR("failed to send request, try again");
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+                continue;
+            } else {
+                std::stringstream errss;
+                errss << "failed to send msg: ";
+                if (msg.length() > 1000) {
+                    errss << msg.substr(0, 1000) << "...";
+                } else {
+                    errss << msg;
+                }
+                MUJIN_LOG_ERROR(errss.str());
+            }
+            if (!recreatedonce) {
+                MUJIN_LOG_INFO("re-creating zmq socket and trying again");
+                if (!!socket) {
+                    socket->close();
+                    socket.reset();
+                }
+                socket = _CreateZMQSocket();
+                recreatedonce = true;
+            } else{
+                std::stringstream ss;
+                ss << "Failed to send request after re-creating socket.";
+                MUJIN_LOG_ERROR(ss.str());
+                throw MujinException(ss.str(), MEC_Failed);
+            }
+        }
+    }
+    if (GetMilliTime() - starttime > timeout*1000.0) {
+        std::stringstream ss;
+        ss << "Timed out trying to send request.";
+        MUJIN_LOG_ERROR(ss.str());
+        if (msg.length() > 1000) {
+            MUJIN_LOG_INFO(msg.substr(0,1000) << "...");
+        } else {
+            MUJIN_LOG_INFO(msg);
+        }
+        throw MujinException(ss.str(), MEC_Timeout);
+    }
+    //recv
+    recreatedonce = false;
+    zmq::message_t reply;
+    bool receivedonce = false; // receive at least once
+    while (!receivedonce || (GetMilliTime() - starttime < timeout * 1000.0)) {
+        try {
+
+            zmq::pollitem_t pollitem;
+            memset(&pollitem, 0, sizeof(zmq::pollitem_t));
+            pollitem.socket = socket->operator void*();
+            pollitem.events = ZMQ_POLLIN;
+
+            // if timeout param is 0, caller means infinite
+            long timeoutms = -1;
+            if (timeout > 0) {
+                timeoutms = timeout * 1000.0;
+            }
+
+            zmq::poll(&pollitem, 1, timeoutms);
+            receivedonce = true;
+            if (pollitem.revents & ZMQ_POLLIN) {
+                socket->recv(&reply);
+                std::string replystring((char *) reply.data (), (size_t) reply.size());
+                return replystring;
+            } else{
+                std::stringstream ss;
+                if (msg.length() > 1000) {
+                    ss << "Timed out receiving response of command " << msg.substr(0, 1000) << "... after " << timeout << " seconds";
+                } else {
+                    ss << "Timed out receiving response of command " << msg << " after " << timeout << " seconds";
+                }
+                MUJIN_LOG_ERROR(ss.str());
+#if BOOST_VERSION > 104800
+                std::string errstr = ss.str();
+                boost::replace_all(errstr, "\"", ""); // need to remove " in the message so that json parser works
+                boost::replace_all(errstr, "\\", ""); // need to remove \ in the message so that json parser works
+#else
+                std::vector<std::pair<std::string, std::string>> searchpairs(2);
+                searchpairs[0].first = "\""; searchpairs[0].second = "";
+                searchpairs[1].first = "\\"; searchpairs[1].second = "";
+                std::string errstr;
+                mujinclient::SearchAndReplace(errstr, ss.str(), searchpairs);
+#endif
+                throw MujinException(errstr, MEC_Timeout);
+            }
+
+        } catch (const zmq::error_t& e) {
+            if (e.num() == EAGAIN) {
+                MUJIN_LOG_ERROR("failed to receive reply, zmq::EAGAIN");
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+                continue;
+            } else {
+                MUJIN_LOG_INFO("failed to send");
+                if (msg.length() > 1000) {
+                    MUJIN_LOG_INFO(msg.substr(0,1000) << "...");
+                } else {
+                    MUJIN_LOG_INFO(msg);
+                }
+            }
+            if (!recreatedonce) {
+                MUJIN_LOG_INFO("re-creating zmq socket and trying again");
+                if (!!socket) {
+                    socket->close();
+                    socket.reset();
+                }
+                socket = _CreateZMQSocket();
+                recreatedonce = true;
+            } else{
+                std::string errstr = "Failed to receive response after re-creating socket.";
+                MUJIN_LOG_ERROR(errstr);
+                throw MujinException(errstr, MEC_Failed);
+            }
+        }
+    }
+    if (GetMilliTime() - starttime > timeout*1000.0) {
+        std::stringstream ss;
+        ss << "timed out trying to receive request";
+        MUJIN_LOG_ERROR(ss.str());
+        if (msg.length() > 1000) {
+            MUJIN_LOG_INFO(msg.substr(0,1000) << "...");
+        } else {
+            MUJIN_LOG_INFO(msg);
+        }
+        throw MujinException(ss.str(), MEC_Failed);
+    }
+
+    return "";
+}
 
 std::string utils::GetJsonString(const std::string& str)
 {
@@ -1440,7 +1419,6 @@ std::string utils::GetJsonString(const std::string& key, const Real value)
 }
 
 
-#ifdef MUJIN_USEZMQ
 std::string utils::GetHeartbeat(const std::string& endpoint) {
     zmq::context_t zmqcontext(1);
     zmq::socket_t socket(zmqcontext, ZMQ_SUB);
@@ -1559,6 +1537,5 @@ std::string utils::GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat) 
         throw MujinException(boost::str(boost::format("%s from heartbeat:\n%s")%ex.what()%heartbeat));
     }
 }
-#endif
 
 } // end namespace mujinplanningclient

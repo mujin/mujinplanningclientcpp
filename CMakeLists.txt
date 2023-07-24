@@ -23,7 +23,7 @@ set (MUJINPLANNINGCLIENT_VERSION_PATCH 0)
 set (MUJINPLANNINGCLIENT_VERSION ${MUJINPLANNINGCLIENT_VERSION_MAJOR}.${MUJINPLANNINGCLIENT_VERSION_MINOR}.${MUJINPLANNINGCLIENT_VERSION_PATCH})
 set (MUJINPLANNINGCLIENT_SOVERSION ${MUJINPLANNINGCLIENT_VERSION_MAJOR}.${MUJINPLANNINGCLIENT_VERSION_MINOR})
 set (CLIENT_SOVERSION ${MUJINPLANNINGCLIENT_VERSION_MAJOR}.${MUJINPLANNINGCLIENT_VERSION_MINOR})
-message(STATUS "Compiling MUJIN Controller Client C++ Version ${MUJINPLANNINGCLIENT_VERSION}, soversion=${CLIENT_SOVERSION}")
+message(STATUS "Compiling MUJIN Planning Client C++ Version ${MUJINPLANNINGCLIENT_VERSION}, soversion=${CLIENT_SOVERSION}")
 
 set(MUJINPLANNINGCLIENT_CMAKE_INSTALL_DIR "mujinplanningclient-${MUJINPLANNINGCLIENT_VERSION_MAJOR}.${MUJINPLANNINGCLIENT_VERSION_MINOR}" CACHE STRING "Directory to install the cmake config files.")
 set(MUJINPLANNINGCLIENT_TARGET_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "The target processor architecture to build for, this is combined with the generator toolchain")
@@ -66,8 +66,8 @@ include(CheckCXXCompilerFlag)
 add_definitions("-DBOOST_SPIRIT_THREADSAFE") # for json parsing
 
 # have to include before boost since the boost headers can be located in a previous installed version of this library
-set(MUJINPLANNINGCLIENT_INCLUDE_LOCAL_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+set(MUJINPLANNINGCLIENT_INCLUDE_LOCAL_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/src/include)
 include_directories(${MUJINPLANNINGCLIENT_INCLUDE_LOCAL_DIRS})
 
 if( MSVC )
@@ -256,7 +256,7 @@ if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
   add_definitions("-fno-strict-aliasing -Wall -Werror=shadow")
 endif( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h IMMEDIATE @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/include/mujinplanningclient/config.h IMMEDIATE @ONLY)
 
 find_package(CURL)
 if( NOT CURL_FOUND )
@@ -316,8 +316,8 @@ else()
   message(WARNING "compiling without libzmq library")
 endif()
 
-file(GLOB mujin_header_files ${CMAKE_CURRENT_SOURCE_DIR}/include/mujinplanningclient/*.h ${CMAKE_CURRENT_SOURCE_DIR}/include/mujinplanningclient/*.hpp)
-install(FILES ${mujin_header_files} ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h DESTINATION include/mujinplanningclient)
+file(GLOB mujin_header_files ${CMAKE_CURRENT_SOURCE_DIR}/src/include/mujinplanningclient/*.h ${CMAKE_CURRENT_SOURCE_DIR}/src/include/mujinplanningclient/*.hpp)
+install(FILES ${mujin_header_files} ${CMAKE_CURRENT_BINARY_DIR}/src/include/mujinplanningclient/config.h DESTINATION src/include/mujinplanningclient)
 
 macro(build_sample name)
   include_directories(${LOG4CXX_INCLUDEDIR} ${libzmq_INCLUDE_DIRS})
@@ -337,13 +337,13 @@ if( OPT_BUILD_TESTS )
   add_subdirectory(test)
 endif()
 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/mujinplanningclient DESTINATION share)
+#install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/share/mujinplanningclient DESTINATION share)
 
 # add make uninstall capability
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
-set(MujinPlanningClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(MujinPlanningClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/include")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config.cmake" IMMEDIATE @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config-version.cmake" IMMEDIATE @ONLY)
 

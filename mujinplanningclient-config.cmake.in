@@ -26,13 +26,13 @@
 #==================================================================================
 if( MSVC )
 get_filename_component(MujinPlanningClient_ROOT_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set( MujinPlanningClient_INCLUDE_DIRS "@MujinPlanningClient_INCLUDE_DIR@;${MujinPlanningClient_ROOT_DIR}/include")
+set( MujinPlanningClient_INCLUDE_DIRS "@MujinPlanningClient_INCLUDE_DIR@;${MujinPlanningClient_ROOT_DIR}/src/include")
 else()
 get_filename_component(_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
 get_filename_component(_PREFIX "${_PREFIX}" PATH)
 get_filename_component(_PREFIX "${_PREFIX}" PATH)
 get_filename_component(MujinPlanningClient_ROOT_DIR "${_PREFIX}" PATH)
-set( MujinPlanningClient_INCLUDE_DIRS "${MujinPlanningClient_ROOT_DIR}/include")
+set( MujinPlanningClient_INCLUDE_DIRS "${MujinPlanningClient_ROOT_DIR}/src/include")
 endif()
 
 if( MSVC )

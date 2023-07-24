@@ -51,13 +51,13 @@
 #include <sstream>
 
 #include <boost/version.hpp>
+#include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/array.hpp>
 
-#include <mujinwebstackclient/webstackclient.h>
-
+#include <mujinplanningclient/zmq.hpp>
 #include <mujinplanningclient/config.h>
 #include <mujinplanningclient/mujinexceptions.h>
 #include <mujinplanningclient/mujinjson.h>
@@ -74,50 +74,6 @@ enum TaskResourceOptions
 };
 
 typedef double Real;
-
-class MUJINPLANNINGCLIENT_API WebResource
-{
-public:
-    WebResource(PlanningClientPtr controller, const std::string& resourcename, const std::string& pk);
-    virtual ~WebResource() {
-    }
-
-    inline WebstackClientPtr GetWebstackClient() const {
-        return _webstackClient;
-    }
-    inline const std::string& GetResourceName() const {
-        return _resourcename;
-    }
-    inline const std::string& GetPrimaryKey() const {
-        return _pk;
-    }
-
-    /// \brief gets an attribute of this web resource
-    template<class T>
-    inline T Get(const std::string& field, double timeout = 5.0) {
-        rapidjson::Document pt(rapidjson::kObjectType);
-        GetWrap(pt, field, timeout);
-        return mujinjson::GetJsonValueByKey<T>(pt, field.c_str());
-    }
-
-    /// \brief sets an attribute of this web resource
-    void Set(const std::string& field, const std::string& newvalue, double timeout = 5.0);
-
-    /// \brief sets an attribute of this web resource
-    void SetJSON(const std::string& json, double timeout = 5.0);
-
-    /// \brief delete the resource and all its child resources
-    void Delete(double timeout = 5.0);
-
-    /// \brief copy the resource and all its child resources to a new name
-    void Copy(const std::string& newname, int options, double timeout = 5.0);
-
-private:
-    void GetWrap(rapidjson::Document& pt, const std::string& field, double timeout = 5.0);
-
-    WebstackClientPtr _webstackClient;
-    std::string _resourcename, _pk;
-};
 
 struct SensorData {
 public:
@@ -158,14 +114,18 @@ enum MinViableRegionRegistrationMode : uint8_t {
     MVRRM_PerpendicularDrag = 3,
 };
 
-class MUJINPLANNINGCLIENT_API BinPickingTaskResource : public WebResource
+class MUJINPLANNINGCLIENT_API BinPickingTaskResource
 {
 public:
-    BinPickingTaskResource(PlanningClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
+    BinPickingTaskResource(
+        const std::string& pk,
+        const std::string& scenepk,
+        /// HACK until can think of proper way to send sceneparams
+        const std::string& scenebasename,
+        const std::string& tasktype,
+        const std::string& baseuri,
+        const std::string& userName);
     virtual ~BinPickingTaskResource();
-
-    /// \brief Get all the transforms the results are storing. Depending on the optimization, can be more than just the robot
-    void GetEnvironmentState(EnvironmentState& envstate);
 
     struct MUJINPLANNINGCLIENT_API DetectedObject
     {
@@ -325,7 +285,7 @@ public:
     };
 
     struct MUJINPLANNINGCLIENT_API ResultGetInstObjectAndSensorInfo : public ResultBase
-    {MUJIN_LOGGER("mujin.planningclientcpp.binpickingtask");
+    {
 
         virtual ~ResultGetInstObjectAndSensorInfo();
         void Parse(const rapidjson::Value& pt);
@@ -334,11 +294,11 @@ public:
         std::map<std::string, ResultOBB> minstobjectobb;
         std::map<std::string, ResultOBB> minstobjectinnerobb;
         std::map<mujin::SensorSelectionInfo, Transform> msensortransform;
-        std::map<mujin::SensorSelectionInfo, RobotResource::AttachedSensorResource::SensorData> msensordata;
-        std::map<std::string, boost::shared_ptr<rapidjson::Document> > mrGeometryInfos; ///< for every object, list of all the geometry infos
+        std::map<mujin::SensorSelectionInfo, SensorData> msensordata;
+        std::map<std::string, boost::shared_ptr<rapidjson::Document>> mrGeometryInfos; ///< for every object, list of all the geometry infos
     };
 
-    struct MUJINCLIENT_API AddPointOffsetInfo
+    struct MUJINPLANNINGCLIENT_API AddPointOffsetInfo
     {
         AddPointOffsetInfo() : zOffsetAtBottom(0), zOffsetAtTop(0) {
         }
@@ -347,15 +307,15 @@ public:
     };
     typedef boost::shared_ptr<AddPointOffsetInfo> AddPointOffsetInfoPtr;
 
+    inline const std::string& GetResourceName() const {
+        static const std::string resourceName = "task";
+        return resourceName;
+    }
+    inline const std::string& GetPrimaryKey() const {
+        return _pk;
+    }
 
-    /** \brief Initializes binpicking task.
-        \param commandtimeout seconds until this command times out
-        \param userinfo json string user info, such as locale
-        \param slaverequestid id of mujincontroller planning slave to connect to
-     */
-    void Initialize(const std::string& defaultTaskParameters, const double commandtimeout=5.0, const std::string& userinfo="{}", const std::string& slaverequestid="");
 
-#ifdef MUJIN_USEZMQ
     /** \brief Initializes binpicking task.
         \param zmqPort port of the binpicking zmq server
         \param heartbeatPort port of the binpicking zmq server's heartbeat publisher
@@ -366,8 +326,7 @@ public:
         \param userinfo json string user info, such as locale
         \param slaverequestid id of mujincontroller planning slave to connect to
      */
-    virtual void Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq=false, const double reinitializetimeout=10, const double commandtimeout=0, const std::string& userinfo="{}", const std::string& slaverequestid="");
-#endif
+    void Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq=false, const double reinitializetimeout=10, const double commandtimeout=0, const std::string& userinfo="{}", const std::string& slaverequestid="");
 
     void SetCallerId(const std::string& callerid);
 
@@ -376,7 +335,7 @@ public:
     /// \brief executes command directly from rapidjson::Value struct.
     ///
     /// \param rTaskParameters will be destroyed after the call due to r-value moves
-    virtual void ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout /* second */=5.0);
+    void ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout /* second */=5.0);
 
     void GetInnerEmptyRegionOBB(ResultOBB& result, const std::string& targetname, const std::string& linkname, const std::string& unit, const double timeout=0);
 
@@ -395,7 +354,7 @@ public:
                if reinitializetimeout is 0, then this does not invoke heartbeat monitoring thread
         \param timeout seconds until this command times out
      */
-    virtual void InitializeZMQ(const double reinitializetimeout = 0,const double timeout /* second */=5.0);
+    void InitializeZMQ(const double reinitializetimeout = 0,const double timeout /* second */=5.0);
 
     /** \brief Add a point cloud collision obstacle with name to the environment.
         \param vpoints list of x,y,z coordinates in meter
@@ -502,15 +461,19 @@ public:
     // send result of RemoveObjectFromObjectList request
     void SendTriggerDetectionCaptureResult(const std::string& triggerType, const std::string& returnCode, double timeout /* second */=5.0);
 
-protected:
+private:
     const std::string& _GetCallerId() const;
 
     /** \brief Monitors heartbeat signals from a running binpicking ZMQ server, and reinitializes the ZMQ server when heartbeat is lost.
         \param reinitializetimeout seconds to wait before re-initializing the ZMQ server after the heartbeat signal is lost
      */
     void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
+    boost::shared_ptr<zmq::socket_t> _CreateZMQSocket();
+    std::string _CallZMQ(const std::string& msg, const double timeout);
     void _ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout /*second*/= 5.0, const bool getresult=true);
     void _LogTaskParametersAndThrow(const std::string& taskparameters);
+
+    std::string _pk;
 
     std::stringstream _ss;
 
@@ -518,9 +481,7 @@ protected:
     std::string _mujinControllerIp;
     boost::mutex _mutexTaskState;
     ResultGetBinpickingState _taskstate;
-#ifdef MUJIN_USEZMQ
     boost::shared_ptr<zmq::context_t> _zmqcontext;
-#endif
     int _zmqPort;
     int _heartbeatPort;
 
@@ -537,10 +498,11 @@ protected:
     bool _bIsInitialized;
     bool _bShutdownHeartbeatMonitor;
 };
+
 typedef boost::shared_ptr<BinPickingTaskResource> BinPickingTaskResourcePtr;
 typedef boost::weak_ptr<BinPickingTaskResource> BinPickingTaskResourceWeakPtr;
 
-MUJINPLANNINGCLIENT_API BinPickingTaskResourcePtr GetOrCreateTaskFromName(WebstackClientPtr webstackClient, const std::string& scenePk, const std::string& taskName, const std::string& taskType, int options);
+MUJINPLANNINGCLIENT_API BinPickingTaskResourcePtr GetOrCreateTaskFromName(const std::string& scenePk, const std::string& taskName, const std::string& taskType, int options);
 
 
 namespace utils {
@@ -572,15 +534,13 @@ MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const 
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const unsigned long long value);
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const Real value);
 
-#ifdef MUJIN_USEZMQ
 /// \brief get heartbeat
-/// \param endopoint endpoint to get heartbeat from. looks like protocol://hostname:port (ex. tcp://localhost:11001)
+/// \param endpoint endpoint to get heartbeat from. looks like protocol://hostname:port (ex. tcp://localhost:11001)
 /// \return heartbeat as string
 MUJINPLANNINGCLIENT_API std::string GetHeartbeat(const std::string& endpoint);
-
 MUJINPLANNINGCLIENT_API std::string GetScenePkFromHeartbeat(const std::string& heartbeat);
 MUJINPLANNINGCLIENT_API std::string GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat);
-#endif
+
 } // namespace utils
 
 } // namespace mujinplanningclient
