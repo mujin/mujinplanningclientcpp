@@ -118,8 +118,6 @@ class MUJINPLANNINGCLIENT_API MujinPlanningClient
 {
 public:
     MujinPlanningClient(
-        const std::string& pk,
-        const std::string& scenepk,
         /// HACK until can think of proper way to send sceneparams
         const std::string& scenebasename,
         const std::string& tasktype,
@@ -311,9 +309,6 @@ public:
         static const std::string resourceName = "task";
         return resourceName;
     }
-    inline const std::string& GetPrimaryKey() const {
-        return _pk;
-    }
 
 
     /** \brief Initializes binpicking task.
@@ -473,8 +468,6 @@ private:
     void _ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout /*second*/= 5.0, const bool getresult=true);
     void _LogTaskParametersAndThrow(const std::string& taskparameters);
 
-    std::string _pk;
-
     std::stringstream _ss;
 
     std::map<std::string, std::string> _mapTaskParameters; ///< set of key value pairs that should be included
@@ -490,7 +483,6 @@ private:
     std::string _sceneparams_json, _userinfo_json;
     
     std::string _slaverequestid; ///< to ensure the same slave is used for binpicking task
-    std::string _scenepk; ///< scene pk
     std::string _callerid; ///< string identifying the caller
     const std::string _tasktype; ///< the specific task type to create internally. As long as the task supports the binpicking interface, it can be used.
     boost::shared_ptr<boost::thread> _pHeartbeatMonitorThread;

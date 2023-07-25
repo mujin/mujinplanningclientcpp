@@ -427,21 +427,17 @@ void MujinPlanningClient::ResultGetInstObjectAndSensorInfo::Parse(const rapidjso
 }
 
 MujinPlanningClient::MujinPlanningClient(
-    const std::string& pk,
-    const std::string& scenepk,
     /// HACK until can think of proper way to send sceneparams
     const std::string& scenebasename,
     const std::string& tasktype,
     const std::string& baseuri,
     const std::string& userName)
-    : _pk(pk),
-      _zmqPort(-1),
+    : _zmqPort(-1),
       _heartbeatPort(-1),
       _tasktype(tasktype),
       _bIsInitialized(false)
 {
     _callerid = str(boost::format("planningclientcpp%s_zmq")%MUJINPLANNINGCLIENT_VERSION_STRING);
-    _scenepk = scenepk;
     // get hostname from uri
     std::string::const_iterator uriend = baseuri.end();
     // query start
