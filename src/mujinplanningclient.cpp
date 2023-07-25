@@ -73,65 +73,6 @@ void SerializeGetStateCommand(std::stringstream &ss, const std::map<std::string,
     ss << "}";
 }
 
-void
-GenerateMoveToolCommand(const std::string &movetype, const std::string &goaltype, const std::vector<double> &goals,
-                        const std::string &robotname, const std::string &toolname, const double robotspeed,
-                        Real envclearance, std::stringstream &ss,
-                        const std::map<std::string, std::string> &params) {
-    SetMapTaskParameters(ss, params);
-    ss << GetJsonString("command", movetype) << ", ";
-    ss << GetJsonString("goaltype", goaltype) << ", ";
-    if (!robotname.empty()) {
-        ss << GetJsonString("robotname", robotname) << ", ";
-    }
-    if (!toolname.empty()) {
-        ss << GetJsonString("toolname", toolname) << ", ";
-    }
-    if (robotspeed >= 0) {
-        ss << GetJsonString("robotspeed") << ": " << robotspeed << ", ";
-    }
-    if (envclearance >= 0) {
-        ss << GetJsonString("envclearance") << ": " << envclearance << ", ";
-    }
-    ss << GetJsonString("goals") << ": " << GetJsonString(goals);
-    ss << "}";
-
-}
-
-void
-GenerateMoveToolByIkParamCommand(const std::string &movetype, const std::string &instobjectname, const std::string &ikparamname,
-                                 const std::string &robotname, const std::string &toolname, const double robotspeed,
-                                 Real envclearance, std::stringstream &ss,
-                                 const std::map<std::string, std::string> &params) {
-    SetMapTaskParameters(ss, params);
-    ss << GetJsonString("command", movetype) << ", ";
-    ss << "\"goaltype\": null,";
-    ss << GetJsonString("instobjectname", instobjectname) << ", ";
-    if (!robotname.empty()) {
-        ss << GetJsonString("robotname", robotname) << ", ";
-    }
-    if (!toolname.empty()) {
-        ss << GetJsonString("toolname", toolname) << ", ";
-    }
-    if (robotspeed >= 0) {
-        ss << GetJsonString("robotspeed") << ": " << robotspeed << ", ";
-    }
-    if (envclearance >= 0) {
-        ss << GetJsonString("envclearance") << ": " << envclearance << ", ";
-    }
-    ss << GetJsonString("ikparamname", ikparamname);
-    ss << "}";
-
-}
-
-void SetTrajectory(const rapidjson::Value &pt,
-                   std::string *pTraj) {
-    if (!(pt.IsObject() && pt.HasMember("output") && pt["output"].HasMember("trajectory"))) {
-        throw MujinException("trajectory is not available in output", MEC_Failed);
-    }
-    *pTraj = GetJsonValueByPath<std::string>(pt, "/output/trajectory");
-}
-
 void LoadAABBFromJsonValue(const rapidjson::Value& rAABB, mujin::AABB& aabb)
 {
     BOOST_ASSERT(rAABB.IsObject());
@@ -151,7 +92,7 @@ void LoadAABBFromJsonValue(const rapidjson::Value& rAABB, mujin::AABB& aabb)
 
 }  // end namespace
 
-BinPickingTaskResource::ResultGetBinpickingState::ResultGetBinpickingState() :
+MujinPlanningClient::ResultGetBinpickingState::ResultGetBinpickingState() :
     statusPickPlace(""),
     statusDescPickPlace(""),
     statusPhysics(""),
@@ -167,9 +108,9 @@ BinPickingTaskResource::ResultGetBinpickingState::ResultGetBinpickingState() :
     numLeftInSupply(-1),
     placedInDest(-1) {}
 
-BinPickingTaskResource::ResultGetBinpickingState::~ResultGetBinpickingState() {}
+MujinPlanningClient::ResultGetBinpickingState::~ResultGetBinpickingState() {}
 
-void BinPickingTaskResource::ResultGetBinpickingState::Parse(const rapidjson::Value& pt)
+void MujinPlanningClient::ResultGetBinpickingState::Parse(const rapidjson::Value& pt)
 {
     BOOST_ASSERT(pt.IsObject() && pt.HasMember("output"));
     const rapidjson::Value& v = pt["output"];
@@ -326,7 +267,7 @@ void BinPickingTaskResource::ResultGetBinpickingState::Parse(const rapidjson::Va
     }
 }
 
-BinPickingTaskResource::ResultGetBinpickingState::RegisterMinViableRegionInfo::RegisterMinViableRegionInfo() :
+MujinPlanningClient::ResultGetBinpickingState::RegisterMinViableRegionInfo::RegisterMinViableRegionInfo() :
     objectWeight(0.0),
     sensorTimeStampMS(0),
     robotDepartStopTimestamp(0),
@@ -344,7 +285,7 @@ BinPickingTaskResource::ResultGetBinpickingState::RegisterMinViableRegionInfo::R
     minCandidateSize.fill(0);
 }
 
-BinPickingTaskResource::ResultGetBinpickingState::RegisterMinViableRegionInfo::MinViableRegionInfo::MinViableRegionInfo() :
+MujinPlanningClient::ResultGetBinpickingState::RegisterMinViableRegionInfo::MinViableRegionInfo::MinViableRegionInfo() :
     cornerMask(0)
 {
     size2D.fill(0);
@@ -352,17 +293,17 @@ BinPickingTaskResource::ResultGetBinpickingState::RegisterMinViableRegionInfo::M
     maxPossibleSizeOriginal.fill(0);
 }
 
-BinPickingTaskResource::ResultGetBinpickingState::RemoveObjectFromObjectListInfo::RemoveObjectFromObjectListInfo() :
+MujinPlanningClient::ResultGetBinpickingState::RemoveObjectFromObjectListInfo::RemoveObjectFromObjectListInfo() :
     timestamp(0)
 {
 }
 
-BinPickingTaskResource::ResultGetBinpickingState::TriggerDetectionCaptureInfo::TriggerDetectionCaptureInfo() :
+MujinPlanningClient::ResultGetBinpickingState::TriggerDetectionCaptureInfo::TriggerDetectionCaptureInfo() :
     timestamp(0)
 {
 }
 
-void BinPickingTaskResource::ResultOBB::Parse(const rapidjson::Value& pt)
+void MujinPlanningClient::ResultOBB::Parse(const rapidjson::Value& pt)
 {
     const rapidjson::Value&  v = (pt.IsObject()&&pt.HasMember("output") ? pt["output"] : pt);
 
@@ -390,11 +331,11 @@ void BinPickingTaskResource::ResultOBB::Parse(const rapidjson::Value& pt)
     LoadJsonValueByKey(v, "quaternion", quaternion);
 }
 
-BinPickingTaskResource::ResultInstObjectInfo::~ResultInstObjectInfo()
+MujinPlanningClient::ResultInstObjectInfo::~ResultInstObjectInfo()
 {
 }
 
-void BinPickingTaskResource::ResultInstObjectInfo::Parse(const rapidjson::Value& pt)
+void MujinPlanningClient::ResultInstObjectInfo::Parse(const rapidjson::Value& pt)
 {
     BOOST_ASSERT(pt.IsObject() && pt.HasMember("output"));
     const rapidjson::Value& rOutput = pt["output"];
@@ -413,11 +354,11 @@ void BinPickingTaskResource::ResultInstObjectInfo::Parse(const rapidjson::Value&
     }
 }
 
-BinPickingTaskResource::ResultGetInstObjectAndSensorInfo::~ResultGetInstObjectAndSensorInfo()
+MujinPlanningClient::ResultGetInstObjectAndSensorInfo::~ResultGetInstObjectAndSensorInfo()
 {
 }
 
-void BinPickingTaskResource::ResultGetInstObjectAndSensorInfo::Parse(const rapidjson::Value& pt)
+void MujinPlanningClient::ResultGetInstObjectAndSensorInfo::Parse(const rapidjson::Value& pt)
 {
     BOOST_ASSERT(pt.IsObject() && pt.HasMember("output"));
     const rapidjson::Value& output = pt["output"];
@@ -485,7 +426,7 @@ void BinPickingTaskResource::ResultGetInstObjectAndSensorInfo::Parse(const rapid
     }
 }
 
-BinPickingTaskResource::BinPickingTaskResource(
+MujinPlanningClient::MujinPlanningClient(
     const std::string& pk,
     const std::string& scenepk,
     /// HACK until can think of proper way to send sceneparams
@@ -545,7 +486,7 @@ BinPickingTaskResource::BinPickingTaskResource(
     }
 }
 
-BinPickingTaskResource::~BinPickingTaskResource()
+MujinPlanningClient::~MujinPlanningClient()
 {
     _bShutdownHeartbeatMonitor = true;
     if (!!_pHeartbeatMonitorThread) {
@@ -553,7 +494,7 @@ BinPickingTaskResource::~BinPickingTaskResource()
     }
 }
 
-void BinPickingTaskResource::Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq, const double reinitializetimeout, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
+void MujinPlanningClient::Initialize(const std::string& defaultTaskParameters, const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq, const double reinitializetimeout, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
 {
 
     if( defaultTaskParameters.size() > 0 ) {
@@ -581,17 +522,17 @@ void BinPickingTaskResource::Initialize(const std::string& defaultTaskParameters
     if (!_pHeartbeatMonitorThread) {
         _bShutdownHeartbeatMonitor = false;
         if (reinitializetimeout > 0 ) {
-            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
+            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&MujinPlanningClient::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
         }
     }
 }
 
-void BinPickingTaskResource::SetCallerId(const std::string& callerid)
+void MujinPlanningClient::SetCallerId(const std::string& callerid)
 {
     _callerid = callerid;
 }
 
-void BinPickingTaskResource::ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout)
+void MujinPlanningClient::ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout)
 {
     rapidjson::Document rCommand; rCommand.SetObject();
     mujinjson::SetJsonValueByKey(rCommand, "fnname", _tasktype == "binpicking" ? "binpicking.RunCommand" : "RunCommand");
@@ -635,7 +576,7 @@ void BinPickingTaskResource::ExecuteCommand(rapidjson::Value& rTaskParameters, r
     }
 }
 
-void BinPickingTaskResource::ExecuteCommand(const std::string& taskparameters, rapidjson::Document& rResult, const double timeout, const bool getresult)
+void MujinPlanningClient::ExecuteCommand(const std::string& taskparameters, rapidjson::Document& rResult, const double timeout, const bool getresult)
 {
     std::stringstream ss; ss << std::setprecision(std::numeric_limits<double>::digits10+1);
     ss << "{\"fnname\": \"";
@@ -668,7 +609,7 @@ void BinPickingTaskResource::ExecuteCommand(const std::string& taskparameters, r
     }
 }
 
-void BinPickingTaskResource::_ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout, const bool getresult)
+void MujinPlanningClient::_ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout, const bool getresult)
 {
     if (!_bIsInitialized) {
         throw MujinException("BinPicking task is not initialized, please call Initialzie() first.", MEC_Failed);
@@ -717,7 +658,7 @@ void BinPickingTaskResource::_ExecuteCommandZMQ(const std::string& command, rapi
     }
 }
 
-void BinPickingTaskResource::GetInnerEmptyRegionOBB(ResultOBB& result, const std::string& targetname, const std::string& linkname, const std::string& unit, const double timeout)
+void MujinPlanningClient::GetInnerEmptyRegionOBB(ResultOBB& result, const std::string& targetname, const std::string& linkname, const std::string& unit, const double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     std::string command = "GetInnerEmptyRegionOBB";
@@ -734,7 +675,7 @@ void BinPickingTaskResource::GetInnerEmptyRegionOBB(ResultOBB& result, const std
     result.Parse(pt);
 }
 
-void BinPickingTaskResource::UpdateObjects(const std::string& objectname, const std::vector<DetectedObject>& detectedobjects, const std::string& resultstate, const std::string& unit, const double timeout)
+void MujinPlanningClient::UpdateObjects(const std::string& objectname, const std::vector<DetectedObject>& detectedobjects, const std::string& resultstate, const std::string& unit, const double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     static const std::string command = "UpdateObjects";
@@ -761,17 +702,17 @@ void BinPickingTaskResource::UpdateObjects(const std::string& objectname, const 
     ExecuteCommand(_ss.str(), d, timeout); // need to check return code
 }
 
-void BinPickingTaskResource::InitializeZMQ(const double reinitializetimeout, const double timeout)
+void MujinPlanningClient::InitializeZMQ(const double reinitializetimeout, const double timeout)
 {
     if (!_pHeartbeatMonitorThread) {
         _bShutdownHeartbeatMonitor = false;
         if ( reinitializetimeout > 0) {
-            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
+            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&MujinPlanningClient::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
         }
     }
 }
 
-void BinPickingTaskResource::AddPointCloudObstacle(const std::vector<float>&vpoints, const Real pointsize, const std::string& name,  const unsigned long long starttimestamp, const unsigned long long endtimestamp, const bool executionverification, const std::string& unit, int isoccluded, const std::string& locationName, const double timeout, bool clampToContainer, CropContainerMarginsXYZXYZPtr pCropContainerMargins, AddPointOffsetInfoPtr pAddPointOffsetInfo)
+void MujinPlanningClient::AddPointCloudObstacle(const std::vector<float>&vpoints, const Real pointsize, const std::string& name,  const unsigned long long starttimestamp, const unsigned long long endtimestamp, const bool executionverification, const std::string& unit, int isoccluded, const std::string& locationName, const double timeout, bool clampToContainer, CropContainerMarginsXYZXYZPtr pCropContainerMargins, AddPointOffsetInfoPtr pAddPointOffsetInfo)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     std::string command = "AddPointCloudObstacle";
@@ -822,7 +763,7 @@ void BinPickingTaskResource::AddPointCloudObstacle(const std::vector<float>&vpoi
     ExecuteCommand(_ss.str(), rResult, timeout); // need to check return code
 }
 
-void BinPickingTaskResource::VisualizePointCloud(const std::vector<std::vector<float> >&pointslist, const Real pointsize, const std::vector<std::string>&names, const std::string& unit, const double timeout)
+void MujinPlanningClient::VisualizePointCloud(const std::vector<std::vector<float> >&pointslist, const Real pointsize, const std::vector<std::string>&names, const std::string& unit, const double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     std::string command = "VisualizePointCloud";
@@ -851,7 +792,7 @@ void BinPickingTaskResource::VisualizePointCloud(const std::vector<std::vector<f
     ExecuteCommand(_ss.str(),d, timeout); // need to check return code
 }
 
-void BinPickingTaskResource::ClearVisualization(const double timeout)
+void MujinPlanningClient::ClearVisualization(const double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     std::string command = "ClearVisualization";
@@ -862,7 +803,7 @@ void BinPickingTaskResource::ClearVisualization(const double timeout)
     ExecuteCommand(_ss.str(), d, timeout); // need to check return code
 }
 
-void BinPickingTaskResource::IsRobotOccludingBody(const std::string& bodyname, const std::string& cameraname, const unsigned long long starttime, const unsigned long long endtime, bool& r, const double timeout)
+void MujinPlanningClient::IsRobotOccludingBody(const std::string& bodyname, const std::string& cameraname, const unsigned long long starttime, const unsigned long long endtime, bool& r, const double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     std::string command = "IsRobotOccludingBody";
@@ -883,7 +824,7 @@ void BinPickingTaskResource::IsRobotOccludingBody(const std::string& bodyname, c
     r = GetJsonValueByKey<int>(v, "occluded", 1) == 1;
 }
 
-void BinPickingTaskResource::GetInstObjectAndSensorInfo(
+void MujinPlanningClient::GetInstObjectAndSensorInfo(
     const std::vector<std::string>& instobjectnames,
     const std::vector<mujin::SensorSelectionInfo>& sensorSelectionInfos,
     ResultGetInstObjectAndSensorInfo& result,
@@ -909,7 +850,7 @@ void BinPickingTaskResource::GetInstObjectAndSensorInfo(
     }
 }
 
-void BinPickingTaskResource::GetInstObjectInfoFromURI(
+void MujinPlanningClient::GetInstObjectInfoFromURI(
     const std::string& objecturi,
     const Transform& instobjecttransform,
     ResultInstObjectInfo& result,
@@ -937,7 +878,7 @@ void BinPickingTaskResource::GetInstObjectInfoFromURI(
     }
 }
 
-void BinPickingTaskResource::GetBinpickingState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
+void MujinPlanningClient::GetBinpickingState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
 {
     SerializeGetStateCommand(_ss, _mapTaskParameters, "GetState", _tasktype, robotname, unit, timeout);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -945,7 +886,7 @@ void BinPickingTaskResource::GetBinpickingState(ResultGetBinpickingState& result
     result.Parse(pt);
 }
 
-void BinPickingTaskResource::GetITLState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
+void MujinPlanningClient::GetITLState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
 {
     SerializeGetStateCommand(_ss, _mapTaskParameters, "GetState", _tasktype, robotname, unit, timeout);
     rapidjson::Document pt(rapidjson::kObjectType);
@@ -953,7 +894,7 @@ void BinPickingTaskResource::GetITLState(ResultGetBinpickingState& result, const
     result.Parse(pt);
 }
 
-void BinPickingTaskResource::GetPublishedTaskState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
+void MujinPlanningClient::GetPublishedTaskState(ResultGetBinpickingState& result, const std::string& robotname, const std::string& unit, const double timeout)
 {
     ResultGetBinpickingState taskstate;
     {
@@ -979,7 +920,7 @@ void BinPickingTaskResource::GetPublishedTaskState(ResultGetBinpickingState& res
     }
 }
 
-void BinPickingTaskResource::SendMVRRegistrationResult(
+void MujinPlanningClient::SendMVRRegistrationResult(
     const rapidjson::Document &mvrResultInfo,
     double timeout)
 {
@@ -991,7 +932,7 @@ void BinPickingTaskResource::SendMVRRegistrationResult(
     ExecuteCommand(_ss.str(), pt, timeout);
 }
 
-void BinPickingTaskResource::SendRemoveObjectsFromObjectListResult(
+void MujinPlanningClient::SendRemoveObjectsFromObjectListResult(
     const std::vector<ResultGetBinpickingState::RemoveObjectFromObjectListInfo>& removeObjectFromObjectListInfos,
     const bool success,
     const double timeout)
@@ -1012,7 +953,7 @@ void BinPickingTaskResource::SendRemoveObjectsFromObjectListResult(
     ExecuteCommand(_ss.str(), pt, timeout);
 }
 
-void BinPickingTaskResource::SendTriggerDetectionCaptureResult(const std::string& triggerType, const std::string& returnCode, double timeout)
+void MujinPlanningClient::SendTriggerDetectionCaptureResult(const std::string& triggerType, const std::string& returnCode, double timeout)
 {
     SetMapTaskParameters(_ss, _mapTaskParameters);
     _ss << GetJsonString("command", "SendTriggerDetectionCaptureResult") << ", ";
@@ -1023,12 +964,12 @@ void BinPickingTaskResource::SendTriggerDetectionCaptureResult(const std::string
     ExecuteCommand(_ss.str(), pt, timeout);
 }
 
-const std::string& BinPickingTaskResource::_GetCallerId() const
+const std::string& MujinPlanningClient::_GetCallerId() const
 {
     return _callerid;
 }
 
-void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout)
+void MujinPlanningClient::_HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout)
 {
     MUJIN_LOG_DEBUG(str(boost::format("starting controller %s monitoring thread on port %d for slaverequestid=%s.")%_mujinControllerIp%_heartbeatPort%_slaverequestid));
     boost::shared_ptr<zmq::socket_t> socket;
@@ -1064,7 +1005,7 @@ void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializeti
                         std::string key = "slaverequestid-" + _slaverequestid;
                         if (pt["slavestates"].HasMember(key.c_str())
                             && pt["slavestates"][key.c_str()].HasMember("taskstate")) {
-                            BinPickingTaskResource::ResultGetBinpickingState taskstate; 
+                            MujinPlanningClient::ResultGetBinpickingState taskstate; 
                             taskstate.Parse(pt["slavestates"][key.c_str()]["taskstate"]);
                             {
                                 boost::mutex::scoped_lock lock(_mutexTaskState);
@@ -1090,7 +1031,7 @@ void BinPickingTaskResource::_HeartbeatMonitorThread(const double reinitializeti
     MUJIN_LOG_DEBUG(str(boost::format("Stopped controller %s monitoring thread on port %d for slaverequestid=%s.")%_mujinControllerIp%_heartbeatPort%_slaverequestid));
 }
 
-void BinPickingTaskResource::_LogTaskParametersAndThrow(const std::string& taskparameters) {
+void MujinPlanningClient::_LogTaskParametersAndThrow(const std::string& taskparameters) {
     std::string errstr;
     if (taskparameters.size()>1000) {
         errstr = taskparameters.substr(0, 1000);
@@ -1100,7 +1041,7 @@ void BinPickingTaskResource::_LogTaskParametersAndThrow(const std::string& taskp
     throw MujinException(boost::str(boost::format("Timed out receiving response of command with taskparameters=%s...")%errstr));
 }
 
-boost::shared_ptr<zmq::socket_t> BinPickingTaskResource::_CreateZMQSocket()
+boost::shared_ptr<zmq::socket_t> MujinPlanningClient::_CreateZMQSocket()
 {
     auto socket = boost::make_shared<zmq::socket_t>((*_zmqcontext.get()),ZMQ_SUB);
     socket->setsockopt(ZMQ_TCP_KEEPALIVE, 1); // turn on tcp keepalive, do these configuration before connect
@@ -1114,7 +1055,7 @@ boost::shared_ptr<zmq::socket_t> BinPickingTaskResource::_CreateZMQSocket()
     return socket;
 }
 
-std::string BinPickingTaskResource::_CallZMQ(const std::string& msg, const double timeout)
+std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double timeout)
 {
     boost::shared_ptr<zmq::socket_t> socket = _CreateZMQSocket();
     //send
@@ -1356,7 +1297,7 @@ std::string utils::GetJsonString(const Transform& transform)
     return ss.str();
 }
 
-std::string utils::GetJsonString(const BinPickingTaskResource::DetectedObject& obj)
+std::string utils::GetJsonString(const MujinPlanningClient::DetectedObject& obj)
 {
     std::stringstream ss;
     ss << std::setprecision(std::numeric_limits<Real>::digits10+1);

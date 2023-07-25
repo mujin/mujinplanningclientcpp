@@ -114,10 +114,10 @@ enum MinViableRegionRegistrationMode : uint8_t {
     MVRRM_PerpendicularDrag = 3,
 };
 
-class MUJINPLANNINGCLIENT_API BinPickingTaskResource
+class MUJINPLANNINGCLIENT_API MujinPlanningClient
 {
 public:
-    BinPickingTaskResource(
+    MujinPlanningClient(
         const std::string& pk,
         const std::string& scenepk,
         /// HACK until can think of proper way to send sceneparams
@@ -125,7 +125,7 @@ public:
         const std::string& tasktype,
         const std::string& baseuri,
         const std::string& userName);
-    virtual ~BinPickingTaskResource();
+    virtual ~MujinPlanningClient();
 
     struct MUJINPLANNINGCLIENT_API DetectedObject
     {
@@ -499,10 +499,10 @@ private:
     bool _bShutdownHeartbeatMonitor;
 };
 
-typedef boost::shared_ptr<BinPickingTaskResource> BinPickingTaskResourcePtr;
-typedef boost::weak_ptr<BinPickingTaskResource> BinPickingTaskResourceWeakPtr;
+typedef boost::shared_ptr<MujinPlanningClient> MujinPlanningClientPtr;
+typedef boost::weak_ptr<MujinPlanningClient> MujinPlanningClientWeakPtr;
 
-MUJINPLANNINGCLIENT_API BinPickingTaskResourcePtr GetOrCreateTaskFromName(const std::string& scenePk, const std::string& taskName, const std::string& taskType, int options);
+MUJINPLANNINGCLIENT_API MujinPlanningClientPtr GetOrCreateTaskFromName(const std::string& scenePk, const std::string& taskName, const std::string& taskType, int options);
 
 
 namespace utils {
@@ -512,7 +512,7 @@ MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<double>& vec
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<int>& vec);
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<std::string>& vec);
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const Transform& transform);
-MUJINPLANNINGCLIENT_API std::string GetJsonString(const BinPickingTaskResource::DetectedObject& obj);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const MujinPlanningClient::DetectedObject& obj);
 template <typename T, size_t N>
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
 {
