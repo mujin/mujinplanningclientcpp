@@ -21,26 +21,6 @@ namespace mujinplanningclient {
 
 #include <mujinplanningclient/config.h>
 
-/// \brief exception throw when user interrupts the function
-class MUJINPLANNINGCLIENT_API UserInterruptException : public std::exception
-{
-public:
-    UserInterruptException() : std::exception() {
-    }
-    UserInterruptException(const std::string& s) : std::exception(), _s(s) {
-    }
-    virtual ~UserInterruptException() throw() {
-    }
-    char const* what() const throw() {
-        return _s.c_str();
-    }
-    const std::string& message() const {
-        return _s;
-    }
-
-private:
-    std::string _s;
-};
 enum MujinErrorCode {
     MEC_Failed=0,
     MEC_InvalidArguments=1, ///< passed in input arguments are not valid
