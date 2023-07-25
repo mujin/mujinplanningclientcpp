@@ -63,6 +63,12 @@ include(CheckCXXSourceCompiles)
 include(CheckCXXSourceRuns)
 include(CheckCXXCompilerFlag)
 
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/include
+  ${CMAKE_CURRENT_BINARY_DIR}/include
+) # have to do this before every other include!
+
+
 add_definitions("-DBOOST_SPIRIT_THREADSAFE") # for json parsing
 
 # have to include before boost since the boost headers can be located in a previous installed version of this library
@@ -256,7 +262,7 @@ if( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
   add_definitions("-fno-strict-aliasing -Wall -Werror=shadow")
 endif( CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/include/mujinplanningclient/config.h IMMEDIATE @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h IMMEDIATE @ONLY)
 
 find_package(CURL)
 if( NOT CURL_FOUND )
@@ -317,7 +323,8 @@ else()
 endif()
 
 file(GLOB mujin_header_files ${CMAKE_CURRENT_SOURCE_DIR}/src/include/mujinplanningclient/*.h ${CMAKE_CURRENT_SOURCE_DIR}/src/include/mujinplanningclient/*.hpp)
-install(FILES ${mujin_header_files} ${CMAKE_CURRENT_BINARY_DIR}/src/include/mujinplanningclient/config.h DESTINATION src/include/mujinplanningclient)
+install(FILES ${mujin_header_files} DESTINATION include/mujinplanningclient)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/mujinplanningclient/config.h DESTINATION include/mujinplanningclient)
 
 macro(build_sample name)
   include_directories(${LOG4CXX_INCLUDEDIR} ${libzmq_INCLUDE_DIRS})
@@ -343,7 +350,7 @@ endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake")
 
-set(MujinPlanningClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/include")
+set(MujinPlanningClient_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config.cmake" IMMEDIATE @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/mujinplanningclient-config-version.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/mujinplanningclient-config-version.cmake" IMMEDIATE @ONLY)
 
