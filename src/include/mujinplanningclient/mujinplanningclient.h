@@ -351,6 +351,8 @@ public:
      */
     void InitializeZMQ(const double reinitializetimeout = 0,const double timeout /* second */=5.0);
 
+    void GetTransform(const std::string& targetname, Transform& result, const std::string& unit, const double timeout /* second */=5.0);
+
     /** \brief Add a point cloud collision obstacle with name to the environment.
         \param vpoints list of x,y,z coordinates in meter
         \param state additional information about the objects

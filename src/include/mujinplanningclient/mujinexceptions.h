@@ -14,8 +14,8 @@
 /** \file mujinexceptions.h
     \brief Exception definitions.
  */
-#ifndef MUJIN_EXCEPTIONS_H
-#define MUJIN_EXCEPTIONS_H
+#ifndef MUJIN_PLANNING_EXCEPTIONS_H
+#define MUJIN_PLANNING_EXCEPTIONS_H
 
 namespace mujinplanningclient {
 

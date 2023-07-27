@@ -514,13 +514,6 @@ void MujinPlanningClient::Initialize(const std::string& defaultTaskParameters, c
     _slaverequestid = slaverequestid;
 
     InitializeZMQ(reinitializetimeout, timeout);
-
-    if (!_pHeartbeatMonitorThread) {
-        _bShutdownHeartbeatMonitor = false;
-        if (reinitializetimeout > 0 ) {
-            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&MujinPlanningClient::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
-        }
-    }
 }
 
 void MujinPlanningClient::SetCallerId(const std::string& callerid)
@@ -707,6 +700,24 @@ void MujinPlanningClient::InitializeZMQ(const double reinitializetimeout, const 
         }
     }
 }
+
+void MujinPlanningClient::GetTransform(const std::string& targetname, Transform& transform, const std::string& unit, const double timeout)
+{
+    SetMapTaskParameters(_ss, _mapTaskParameters);
+    std::string command = "GetTransform";
+    _ss << GetJsonString("command", command) << ", ";
+    _ss << GetJsonString("targetname", targetname) << ", ";
+    _ss << GetJsonString("tasktype", _tasktype) << ", ";
+    _ss << GetJsonString("unit", unit);
+    _ss << "}";
+    rapidjson::Document pt(rapidjson::kObjectType);
+    ExecuteCommand(_ss.str(), pt, timeout);
+    BOOST_ASSERT(pt.IsObject() && pt.HasMember("output"));
+    const rapidjson::Value& v = pt["output"];
+    LoadJsonValueByKey(v, "translation", transform.translate);
+    LoadJsonValueByKey(v, "quaternion", transform.quaternion);
+}
+
 
 void MujinPlanningClient::AddPointCloudObstacle(const std::vector<float>&vpoints, const Real pointsize, const std::string& name,  const unsigned long long starttimestamp, const unsigned long long endtimestamp, const bool executionverification, const std::string& unit, int isoccluded, const std::string& locationName, const double timeout, bool clampToContainer, CropContainerMarginsXYZXYZPtr pCropContainerMargins, AddPointOffsetInfoPtr pAddPointOffsetInfo)
 {
