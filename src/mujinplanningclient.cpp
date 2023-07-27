@@ -1160,7 +1160,7 @@ std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double t
                 searchpairs[0].first = "\""; searchpairs[0].second = "";
                 searchpairs[1].first = "\\"; searchpairs[1].second = "";
                 std::string errstr;
-                mujinclient::SearchAndReplace(errstr, ss.str(), searchpairs);
+                SearchAndReplace(errstr, ss.str(), searchpairs);
 #endif
                 throw MujinException(errstr, MEC_Timeout);
             }
