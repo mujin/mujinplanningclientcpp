@@ -465,7 +465,7 @@ private:
         \param reinitializetimeout seconds to wait before re-initializing the ZMQ server after the heartbeat signal is lost
      */
     void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
-    boost::shared_ptr<zmq::socket_t> _CreateZMQSocket();
+    boost::shared_ptr<zmq::socket_t> _CreateZMQSocket(bool forHeartbeat);
     std::string _CallZMQ(const std::string& msg, const double timeout);
     void _ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout /*second*/= 5.0, const bool getresult=true);
     void _LogTaskParametersAndThrow(const std::string& taskparameters);

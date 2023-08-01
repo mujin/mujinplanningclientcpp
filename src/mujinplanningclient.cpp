@@ -1048,17 +1048,23 @@ void MujinPlanningClient::_LogTaskParametersAndThrow(const std::string& taskpara
     throw MujinException(boost::str(boost::format("Timed out receiving response of command with taskparameters=%s...")%errstr));
 }
 
-boost::shared_ptr<zmq::socket_t> MujinPlanningClient::_CreateZMQSocket()
+boost::shared_ptr<zmq::socket_t> MujinPlanningClient::_CreateZMQSocket(bool forHeartbeat)
 {
-    auto socket = boost::make_shared<zmq::socket_t>((*_zmqcontext.get()),ZMQ_SUB);
+    auto socket = boost::make_shared<zmq::socket_t>((*_zmqcontext.get()), (forHeartbeat) ? ZMQ_SUB : ZMQ_PUB);
     socket->setsockopt(ZMQ_TCP_KEEPALIVE, 1); // turn on tcp keepalive, do these configuration before connect
     socket->setsockopt(ZMQ_TCP_KEEPALIVE_IDLE, 2); // the interval between the last data packet sent (simple ACKs are not considered data) and the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any further
     socket->setsockopt(ZMQ_TCP_KEEPALIVE_INTVL, 2); // the interval between subsequential keepalive probes, regardless of what the connection has exchanged in the meantime
     socket->setsockopt(ZMQ_TCP_KEEPALIVE_CNT, 2); // the number of unacknowledged probes to send before considering the connection dead and notifying the application layer
+    socket->setsockopt(ZMQ_SNDHWM, 2);
+    socket->setsockopt(ZMQ_LINGER, 100); // ms
     std::stringstream ss; ss << std::setprecision(std::numeric_limits<double>::digits10+1);
-    ss << _heartbeatPort;
-    socket->connect (("tcp://"+ _mujinControllerIp+":"+ss.str()).c_str());
-    socket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    ss << ((forHeartbeat) ? _heartbeatPort : _zmqPort);
+    if (forHeartbeat) {
+        socket->connect(("tcp://"+ _mujinControllerIp+":"+ss.str()).c_str());
+        socket->setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    } else {
+        socket->bind(("tcp://"+ _mujinControllerIp+":"+ss.str()).c_str());
+    }
     return socket;
 }
 
