@@ -985,7 +985,7 @@ void MujinPlanningClient::_HeartbeatMonitorThread(const double reinitializetimeo
             socket->close();
             socket.reset();
         }
-        socket = _CreateZMQSocket();
+        socket = _CreateZMQSocket(true);
 
         zmq::pollitem_t pollitem;
         memset(&pollitem, 0, sizeof(zmq::pollitem_t));
@@ -1070,7 +1070,7 @@ boost::shared_ptr<zmq::socket_t> MujinPlanningClient::_CreateZMQSocket(bool forH
 
 std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double timeout)
 {
-    boost::shared_ptr<zmq::socket_t> socket = _CreateZMQSocket();
+    boost::shared_ptr<zmq::socket_t> socket = _CreateZMQSocket(false);
     //send
     zmq::message_t request (msg.size());
     // std::cout << msg.size() << std::endl;
@@ -1104,7 +1104,7 @@ std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double t
                     socket->close();
                     socket.reset();
                 }
-                socket = _CreateZMQSocket();
+                socket = _CreateZMQSocket(false);
                 recreatedonce = true;
             } else{
                 std::stringstream ss;
@@ -1191,7 +1191,7 @@ std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double t
                     socket->close();
                     socket.reset();
                 }
-                socket = _CreateZMQSocket();
+                socket = _CreateZMQSocket(false);
                 recreatedonce = true;
             } else{
                 std::string errstr = "Failed to receive response after re-creating socket.";
