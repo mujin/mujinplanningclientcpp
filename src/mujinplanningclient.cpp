@@ -1102,7 +1102,8 @@ std::string MujinPlanningClient::_CallZMQ(const std::string& msg, const double t
                 recreatedonce = true;
             } else{
                 std::stringstream ss;
-                ss << "Failed to send request after re-creating socket.";
+                ss << "Failed to send request after re-creating socket. Got error: ";
+                ss << e.what();
                 MUJIN_LOG_ERROR(ss.str());
                 throw MujinException(ss.str(), MEC_Failed);
             }
