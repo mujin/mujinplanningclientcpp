@@ -1012,8 +1012,13 @@ void MujinPlanningClient::_HeartbeatMonitorThread(const double reinitializetimeo
                         std::string key = "slaverequestid-" + _slaverequestid;
                         if (pt["slavestates"].HasMember(key.c_str())
                             && pt["slavestates"][key.c_str()].HasMember("taskstate")) {
+                            // The ResultGetBinpickingState expects all the taskstate data in an output field, so we put
+                            // it there in a fake result so that we can correctly parse the JSON.
+                            rapidJson::Document fakeResult, taskstateDoc;
+                            mujinjson::SaveJsonValue(taskstateDoc, pt["slavestates"][key.c_str()]["taskstate"]);
+                            mujinjson::SetJsonValueByKey(fakeResult, "output", taskstateDoc)
                             MujinPlanningClient::ResultGetBinpickingState taskstate; 
-                            taskstate.Parse(pt["slavestates"][key.c_str()]["taskstate"]);
+                            taskstate.Parse(fakeResult);
                             {
                                 boost::mutex::scoped_lock lock(_mutexTaskState);
                                 _taskstate = taskstate;
