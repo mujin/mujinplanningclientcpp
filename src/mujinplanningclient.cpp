@@ -1014,9 +1014,9 @@ void MujinPlanningClient::_HeartbeatMonitorThread(const double reinitializetimeo
                             && pt["slavestates"][key.c_str()].HasMember("taskstate")) {
                             // The ResultGetBinpickingState expects all the taskstate data in an output field, so we put
                             // it there in a fake result so that we can correctly parse the JSON.
-                            rapidJson::Document fakeResult, taskstateDoc;
+                            rapidjson::Document fakeResult, taskstateDoc;
                             mujinjson::SaveJsonValue(taskstateDoc, pt["slavestates"][key.c_str()]["taskstate"]);
-                            mujinjson::SetJsonValueByKey(fakeResult, "output", taskstateDoc)
+                            mujinjson::SetJsonValueByKey(fakeResult, "output", taskstateDoc);
                             MujinPlanningClient::ResultGetBinpickingState taskstate; 
                             taskstate.Parse(fakeResult);
                             {
