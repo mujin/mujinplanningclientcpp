@@ -14,8 +14,8 @@
 /** \file mujinjson.h
     \brief Wrapper for rapidjson.
  */
-#ifndef MUJIN_PLANNINGCLIENT_JSON_H
-#define MUJIN_PLANNINGCLIENT_JSON_H
+#ifndef MUJIN_CONTROLLERCLIENT_JSON_H
+#define MUJIN_CONTROLLERCLIENT_JSON_H
 
 #include <array>
 #include <boost/shared_ptr.hpp>
@@ -37,7 +37,7 @@
 #include <rapidjson/error/en.h>
 #include <rapidjson/prettywriter.h>
 
-#include <mujinplanningclient/config.h>
+#include <mujincontrollerclient/config.h>
 
 #ifndef MUJINJSON_LOAD_REQUIRED_JSON_VALUE_BY_KEY
 #define MUJINJSON_LOAD_REQUIRED_JSON_VALUE_BY_KEY(rValue, key, param) \
@@ -193,7 +193,7 @@ inline void ParseJson(rapidjson::Document& d, std::istream& is) {
 }
 
 template <typename Container>
-MUJINPLANNINGCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
+MUJINCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
 
 inline void ParseJsonFile(rapidjson::Document& d, const char* filename)
 {
@@ -740,6 +740,26 @@ template<class T> inline T GetJsonValueByKey(const rapidjson::Value& v, const ch
 
 inline std::string GetStringJsonValueByKey(const rapidjson::Value& v, const char* key, const std::string& defaultValue=std::string()) {
     return GetJsonValueByKey<std::string, std::string>(v, key, defaultValue);
+}
+
+/// \brief default value is returned when there is no key or value is null
+inline const char* GetCStringJsonValueByKey(const rapidjson::Value& v, const char* key, const char* pDefaultValue=nullptr) {
+    if (!v.IsObject()) {
+        throw MujinJSONException("Cannot load value of non-object.");
+    }
+    rapidjson::Value::ConstMemberIterator itMember = v.FindMember(key);
+    if (itMember != v.MemberEnd() ) {
+        const rapidjson::Value& child = itMember->value;
+        if (!child.IsNull()) {
+            if( child.IsString() ) {
+                return child.GetString();
+            }
+            else {
+                throw MujinJSONException("In GetCStringJsonValueByKey, expecting a String, but got a different object type");
+            }
+        }
+    }
+    return pDefaultValue; // not present
 }
 
 template<class T> inline T GetJsonValueByPath(const rapidjson::Value& v, const char* key) {
