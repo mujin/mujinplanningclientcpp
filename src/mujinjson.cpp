@@ -104,7 +104,7 @@ void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buff
 }
 
 // used for declaration of the specialization
-void __InternalParseJsonFile(rapidjson::Document& d, const char* filename)
+void ParseJsonFile(rapidjson::Document& d, const char* filename)
 {
     std::vector<char> buffer;
     return ParseJsonFile(d, filename, buffer);

@@ -34,8 +34,6 @@
 #include <rapidjson/document.h>
 #include <rapidjson/writer.h>
 #include <rapidjson/stringbuffer.h>
-#include "mujinplanningclient/mujinjson.h"
-
 #include "logging.h"
 #include "mujinplanningclient/mujinjson.h"
 
