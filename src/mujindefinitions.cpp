@@ -59,7 +59,7 @@ ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pMo
     else if( strcmp(pModeStr, "pointCloudOnChangeAfterGrab") == 0 ) {
         return EVM_PointCloudOnChangeAfterGrab;
     }
-    throw mujinclient::MujinException(str(boost::format("Failed to parse '%s' as ExecutionVerificationMode")%pModeStr), mujinclient::MEC_InvalidArguments);
+    throw mujinplanningclient::MujinException(str(boost::format("Failed to parse '%s' as ExecutionVerificationMode")%pModeStr), mujinplanningclient::MEC_InvalidArguments);
 }
 
 MUJINPLANNINGCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode)
@@ -90,7 +90,7 @@ MUJINPLANNINGCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegist
     if( strcmp(pModeStr, "PerpendicularDrag") == 0 ) {
         return MVRRM_PerpendicularDrag;
     }
-    throw mujinclient::MujinException(str(boost::format("Failed to parse '%s' as ExecutionVerificationMode")%pModeStr), mujinclient::MEC_InvalidArguments);
+    throw mujinplanningclient::MujinException(str(boost::format("Failed to parse '%s' as ExecutionVerificationMode")%pModeStr), mujinplanningclient::MEC_InvalidArguments);
 }
 
 } // end namespace mujin

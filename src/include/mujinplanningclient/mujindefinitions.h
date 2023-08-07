@@ -160,9 +160,20 @@ enum ExecutionVerificationMode : uint8_t
     EVM_PointCloudOnChangeAfterGrab = 6, ///< For dest containers only. Do verification on the real-time point cloud data only when container is known to have changed and after robot has grabbed the part. When robot goes into dest container and leaves, that counts as a change. Enabling this option means the robot will stop more while grabbing object.
 };
 
-MUJINCLIENT_API const char* GetExecutionVerificationModeString(ExecutionVerificationMode mode);
+MUJINPLANNINGCLIENT_API const char* GetExecutionVerificationModeString(ExecutionVerificationMode mode);
 
-MUJINCLIENT_API ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pModeStr, ExecutionVerificationMode defaultMode);
+MUJINPLANNINGCLIENT_API ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pModeStr, ExecutionVerificationMode defaultMode);
+
+enum MinViableRegionRegistrationMode : uint8_t {
+    MVRRM_None = 0, ///< registration without touching
+    MVRRM_Lift = 1,
+    MVRRM_Drag = 2,
+    MVRRM_PerpendicularDrag = 3,
+};
+
+MUJINPLANNINGCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode);
+
+MUJINPLANNINGCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegistrationModeFromString(const char* pModeStr, MinViableRegionRegistrationMode defaultMode);
 
 } // end namespace mujin
 

@@ -146,8 +146,8 @@ void MujinPlanningClient::ResultGetBinpickingState::Parse(const rapidjson::Value
     placedInDest = GetJsonValueByPath<int>(v, "/orderstate/placedInDest", -1);
 
     registerMinViableRegionInfo.locationName = GetJsonValueByPath<std::string>(v, "/registerMinViableRegionInfo/locationName", std::string());
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/translation_", registerMinViableRegionInfo.translation_);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/quat_", registerMinViableRegionInfo.quat_);
+    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/translation", registerMinViableRegionInfo.translation);
+    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/quaternion", registerMinViableRegionInfo.quaternion);
     registerMinViableRegionInfo.objectWeight = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/objectWeight", 0);
     registerMinViableRegionInfo.sensorTimeStampMS = GetJsonValueByPath<uint64_t>(v, "/registerMinViableRegionInfo/sensorTimeStampMS", 0);
     registerMinViableRegionInfo.robotDepartStopTimestamp = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/robotDepartStopTimestamp", 0);
@@ -198,7 +198,7 @@ void MujinPlanningClient::ResultGetBinpickingState::Parse(const rapidjson::Value
     triggerDetectionCaptureInfo.timestamp = GetJsonValueByPath<double>(v, "/triggerDetectionCaptureInfo/timestamp", 0);
     triggerDetectionCaptureInfo.triggerType = GetJsonValueByPath<std::string>(v, "/triggerDetectionCaptureInfo/triggerType", "");
     triggerDetectionCaptureInfo.locationName = GetJsonValueByPath<std::string>(v, "/triggerDetectionCaptureInfo/locationName", "");
-    triggerDetectionCaptureInfo.targetupdatename = GetJsonValueByPath<std::string>(v, "/triggerDetectionCaptureInfo/targetupdatename", "");
+    triggerDetectionCaptureInfo.targetUpdateNamePrefix = GetJsonValueByPath<std::string>(v, "/triggerDetectionCaptureInfo/targetUpdateNamePrefix", "");
 
     activeLocationTrackingInfos.clear();
     if( v.HasMember("activeLocationTrackingInfos") && v["activeLocationTrackingInfos"].IsArray()) {
@@ -276,8 +276,8 @@ MujinPlanningClient::ResultGetBinpickingState::RegisterMinViableRegionInfo::Regi
     skipAppendingToObjectSet(false),
     maxPossibleSizePadding(30)
 {
-    translation_.fill(0);
-    quat_.fill(0);
+    translation.fill(0);
+    quaternion.fill(0);
     liftedWorldOffset.fill(0);
     maxCandidateSize.fill(0);
     minCandidateSize.fill(0);
@@ -384,6 +384,7 @@ void MujinPlanningClient::ResultGetInstObjectAndSensorInfo::Parse(const rapidjso
         }
 
         LoadJsonValueByKey(it->value, "uri", muri[objname]);
+        LoadJsonValueByKey(it->value, "objectType", mObjectType[objname]);
     }
 
     const rapidjson::Value& sensors = output["sensors"];
@@ -1319,11 +1320,11 @@ std::string utils::GetJsonString(const MujinPlanningClient::DetectedObject& obj)
 {
     std::stringstream ss;
     ss << std::setprecision(std::numeric_limits<Real>::digits10+1);
-    //"{\"name\": \"obj\",\"translation_\":[100,200,300],\"quat_\":[1,0,0,0],\"confidence\":0.5}"
+    //"{\"name\": \"obj\",\"translation\":[100,200,300],\"quaternion\":[1,0,0,0],\"confidence\":0.5}"
     ss << "{";
     ss << GetJsonString("name") << ": " << GetJsonString(obj.name) << ", ";
     ss << GetJsonString("object_uri") << ": " << GetJsonString(obj.object_uri) << ", ";
-    ss << GetJsonString("translation_") << ": [";
+    ss << GetJsonString("translation") << ": [";
     for (unsigned int i=0; i<3; i++) {
         ss << obj.transform.translate[i];
         if (i!=3-1) {
@@ -1331,7 +1332,7 @@ std::string utils::GetJsonString(const MujinPlanningClient::DetectedObject& obj)
         }
     }
     ss << "], ";
-    ss << GetJsonString("quat_") << ": [";
+    ss << GetJsonString("quaternion") << ": [";
     for (unsigned int i=0; i<4; i++) {
         ss << obj.transform.quaternion[i];
         if (i!=4-1) {

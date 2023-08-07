@@ -142,6 +142,19 @@ public:
     };
     typedef boost::shared_ptr<ResultBase> ResultBasePtr;
 
+    class CopyableRapidJsonDocument : public rapidjson::Document
+    {
+    public:
+        // Since ResultGetBinpickingState needs to be copyable while rapidjson::Document is not, there needs to be a small wrapper
+        CopyableRapidJsonDocument& operator=(const CopyableRapidJsonDocument& other) {
+            SetNull();
+            GetAllocator().Clear();
+            CopyFrom(other, GetAllocator());
+            return *this;
+        }
+    };
+
+
     struct MUJINPLANNINGCLIENT_API ResultGetBinpickingState : public ResultBase
     {
         /// \brief holds published occlusion results of camera and container pairs
@@ -185,18 +198,6 @@ public:
         {
             RegisterMinViableRegionInfo();
 
-            class CopyableRapidJsonDocument : public rapidjson::Document
-            {
-            public:
-                // Since ResultGetBinpickingState needs to be copyable while rapidjson::Document is not, there needs to be a small wrapper
-                CopyableRapidJsonDocument& operator=(const CopyableRapidJsonDocument& other) {
-                    SetNull();
-                    GetAllocator().Clear();
-                    CopyFrom(other, GetAllocator());
-                    return *this;
-                }
-            };
-
             struct MinViableRegionInfo
             {
                 MinViableRegionInfo();
@@ -208,8 +209,8 @@ public:
             } minViableRegion;
 
             std::string locationName; ///< The name of the location where the minViableRegion was triggered for
-            std::array<double, 3> translation_; ///< Translation of the 2D MVR plane (height = 0)
-            std::array<double, 4> quat_; ///< Rotation of the 2D MVR plane (height = 0)
+            std::array<double, 3> translation; ///< Translation of the 2D MVR plane (height = 0)
+            std::array<double, 4> quaternion; ///< Rotation of the 2D MVR plane (height = 0)
             double objectWeight; ///< If non-zero, use this weight fo registration. unit is kg. zero means unknown.
             uint64_t sensorTimeStampMS; ///< Same as DetectedObject's timestamp sent to planning
             double robotDepartStopTimestamp; ///< Force capture after robot stops
@@ -247,10 +248,11 @@ public:
             double timestamp; ///< timestamp this request was sent. If non-zero, then valid.
             std::string triggerType; ///< The type of trigger this is. For now can be: "phase1Detection", "phase2Detection"
             std::string locationName; ///< The name of the location for this detection trigger.
-            std::string targetupdatename; ///< if not empty, use this new targetupdatename for the triggering, otherwise do not change the original targetupdatename
+            std::string targetUpdateNamePrefix; ///< if not empty, use this new targetUpdateNamePrefix for the triggering, otherwise do not change the original targetUpdateNamePrefix
         } triggerDetectionCaptureInfo;
 
         std::vector<mujin::PickPlaceHistoryItem> pickPlaceHistoryItems; ///< history of pick/place actions that occurred in planning. Events should be sorted in the order they happen, ie event [0] happens before event [1], meaning event[0].eventTimeStampUS is before event[1].eventTimeStampUS
+        CopyableRapidJsonDocument rUnitInfo; ///< the unitInfo struct that specifies what the units for the data in this struct are.
     };
 
     struct MUJINPLANNINGCLIENT_API ResultOBB : public ResultBase
@@ -294,6 +296,7 @@ public:
         std::map<mujin::SensorSelectionInfo, Transform> msensortransform;
         std::map<mujin::SensorSelectionInfo, SensorData> msensordata;
         std::map<std::string, boost::shared_ptr<rapidjson::Document>> mrGeometryInfos; ///< for every object, list of all the geometry infos
+        std::map<std::string, std::string> mObjectType;
     };
 
     struct MUJINPLANNINGCLIENT_API AddPointOffsetInfo
