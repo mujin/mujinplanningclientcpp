@@ -107,13 +107,6 @@ struct CropContainerMarginsXYZXYZ
 };
 typedef boost::shared_ptr<CropContainerMarginsXYZXYZ> CropContainerMarginsXYZXYZPtr;
 
-enum MinViableRegionRegistrationMode : uint8_t {
-    MVRRM_None = 0, ///< registration without touching
-    MVRRM_Lift = 1,
-    MVRRM_Drag = 2,
-    MVRRM_PerpendicularDrag = 3,
-};
-
 class MUJINPLANNINGCLIENT_API MujinPlanningClient
 {
 public:
@@ -142,16 +135,24 @@ public:
     };
     typedef boost::shared_ptr<ResultBase> ResultBasePtr;
 
+    // Since ResultGetBinpickingState needs to be copyable while rapidjson::Document is not, there needs to be a small wrapper
     class CopyableRapidJsonDocument : public rapidjson::Document
     {
     public:
-        // Since ResultGetBinpickingState needs to be copyable while rapidjson::Document is not, there needs to be a small wrapper
+        // Inherit all the constructors.
+        using rapidjson::Document::Document;
+        CopyableRapidJsonDocument(const CopyableRapidJsonDocument& other)
+        {
+            *this = other;
+        }
+
         CopyableRapidJsonDocument& operator=(const CopyableRapidJsonDocument& other) {
             SetNull();
             GetAllocator().Clear();
             CopyFrom(other, GetAllocator());
             return *this;
         }
+
     };
 
 
@@ -197,6 +198,15 @@ public:
         struct RegisterMinViableRegionInfo
         {
             RegisterMinViableRegionInfo();
+            RegisterMinViableRegionInfo(const RegisterMinViableRegionInfo& rhs);
+
+            RegisterMinViableRegionInfo& operator=(const RegisterMinViableRegionInfo& rhs);
+
+            void SerializeJSON(rapidjson::Value& rInfo, rapidjson::Document::AllocatorType& allocator) const;
+            void DeserializeJSON(const rapidjson::Value& rInfo);
+
+            /// \brief scales all translational components by this value
+            void ConvertLengthUnitScale(double fUnitScale);
 
             struct MinViableRegionInfo
             {
@@ -223,7 +233,7 @@ public:
             double minCornerVisibleInsideDist; ///< how much distance inside MVR robot exposes to camera
             double maxCornerAngleDeviation; ///< how much angle deviation around uncertain corner is considered to expose to camera
             uint8_t occlusionFreeCornerMask; ///< mask of corners that robot exposes to camera. 4 bit. -x-y = 1, +x-y = 2, -x+y = 4, +x+y = 8
-            MinViableRegionRegistrationMode registrationMode; ///< lift, drag or perpendicular drag
+            mujin::MinViableRegionRegistrationMode registrationMode; ///< lift, drag or perpendicular drag
             bool skipAppendingToObjectSet; ///<  if true, skip appending newly created registration data into an active object set
             double maxPossibleSizePadding; ///< how much to additionally expose max possible size region to vision
             std::vector<double> fullDofValues; ///< robot configuration state on capturing
