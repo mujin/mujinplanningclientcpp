@@ -113,6 +113,15 @@ void MujinPlanningClient::ResultGetBinpickingState::Parse(const rapidjson::Value
     BOOST_ASSERT(pt.IsObject() && pt.HasMember("output"));
     const rapidjson::Value& v = pt["output"];
 
+    {
+        rUnitInfo.SetNull();
+        rUnitInfo.GetAllocator().Clear();
+        const rapidjson::Value::ConstMemberIterator itUnitInfo = v.FindMember("unitInfo");
+        if( itUnitInfo != v.MemberEnd() ) {
+            rUnitInfo.CopyFrom(itUnitInfo->value, rUnitInfo.GetAllocator());
+        }
+    }
+
     statusPickPlace = GetJsonValueByKey<std::string>(v, "statusPickPlace", "unknown");
     statusDescPickPlace = GetJsonValueByKey<std::string>(v, "statusDescPickPlace", "unknown");
     cycleIndex = GetJsonValueByKey<std::string>(v, "statusPickPlaceCycleIndex", "");
