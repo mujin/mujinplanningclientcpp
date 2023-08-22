@@ -288,7 +288,10 @@ MujinPlanningClient::ResultGetBinpickingState::RegisterMinViableRegionInfo& Muji
     minCandidateSize = rhs.minCandidateSize;
     transferSpeedPostMult = rhs.transferSpeedPostMult;
 
-    graspModelInfo = rhs.graspModelInfo;
+    graspModelInfo.SetNull();
+    graspModelInfo.GetAllocator().Clear();
+    graspModelInfo.CopyFrom(rhs.graspModelInfo, graspModelInfo.GetAllocator());
+
     minCornerVisibleDist = rhs.minCornerVisibleDist;
     minCornerVisibleInsideDist = rhs.minCornerVisibleInsideDist;
     maxCornerAngleDeviation = rhs.maxCornerAngleDeviation;
