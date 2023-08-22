@@ -1,6 +1,5 @@
 // -*- coding: utf-8 -*-
-//
-// Copyright (C) 2012-2013 MUJIN Inc. <rosen.diankov@mujin.co.jp>
+// Copyright (C) 2012-2020 MUJIN Inc. <rosen.diankov@mujin.co.jp>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -228,7 +227,7 @@ public:
             std::array<double, 3> maxCandidateSize; ///< the max candidate size expecting
             std::array<double, 3> minCandidateSize; ///< the min candidate size expecting
             double transferSpeedPostMult; ///< transfer speed multiplication factor
-            CopyableRapidJsonDocument graspModelInfo; ///< Parameters used for grasping model generation for the object
+            rapidjson::Document graspModelInfo; ///< Parameters used for grasping model generation for the object
             double minCornerVisibleDist; ///< how much distance along with uncertain edge from uncertain corner robot exposes to camera
             double minCornerVisibleInsideDist; ///< how much distance inside MVR robot exposes to camera
             double maxCornerAngleDeviation; ///< how much angle deviation around uncertain corner is considered to expose to camera

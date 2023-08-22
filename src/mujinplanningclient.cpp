@@ -154,44 +154,13 @@ void MujinPlanningClient::ResultGetBinpickingState::Parse(const rapidjson::Value
     numLeftInSupply = GetJsonValueByPath<int>(v, "/orderstate/numLeftInSupply", -1);
     placedInDest = GetJsonValueByPath<int>(v, "/orderstate/placedInDest", -1);
 
-    registerMinViableRegionInfo.locationName = GetJsonValueByPath<std::string>(v, "/registerMinViableRegionInfo/locationName", std::string());
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/translation", registerMinViableRegionInfo.translation);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/quaternion", registerMinViableRegionInfo.quaternion);
-    registerMinViableRegionInfo.objectWeight = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/objectWeight", 0);
-    registerMinViableRegionInfo.sensorTimeStampMS = GetJsonValueByPath<uint64_t>(v, "/registerMinViableRegionInfo/sensorTimeStampMS", 0);
-    registerMinViableRegionInfo.robotDepartStopTimestamp = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/robotDepartStopTimestamp", 0);
-    registerMinViableRegionInfo.transferSpeedPostMult = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/transferSpeedPostMult", 1.0);
     {
-        registerMinViableRegionInfo.graspModelInfo.SetNull();
-        registerMinViableRegionInfo.graspModelInfo.GetAllocator().Clear();
-        const rapidjson::Value* graspModelInfoJson = rapidjson::Pointer("/registerMinViableRegionInfo/graspModelInfo").Get(v);
-        if( !!graspModelInfoJson && graspModelInfoJson->IsObject() ) {
-            registerMinViableRegionInfo.graspModelInfo.CopyFrom(*graspModelInfoJson, registerMinViableRegionInfo.graspModelInfo.GetAllocator());
+        registerMinViableRegionInfo = RegisterMinViableRegionInfo();
+        const rapidjson::Value::ConstMemberIterator itRegisterMinViableRegionInfo = v.FindMember("registerMinViableRegionInfo");
+        if( itRegisterMinViableRegionInfo != v.MemberEnd() ) {
+            registerMinViableRegionInfo.DeserializeJSON(itRegisterMinViableRegionInfo->value);
         }
     }
-    registerMinViableRegionInfo.minCornerVisibleDist = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/minCornerVisibleDist", 30);
-    registerMinViableRegionInfo.minCornerVisibleInsideDist = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/minCornerVisibleInsideDist", 0);
-    registerMinViableRegionInfo.maxCornerAngleDeviation = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/maxCornerAngleDeviation", 0);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/minViableRegion/size2D", registerMinViableRegionInfo.minViableRegion.size2D);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/minViableRegion/maxPossibleSize", registerMinViableRegionInfo.minViableRegion.maxPossibleSize);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/minViableRegion/maxPossibleSizeOriginal", registerMinViableRegionInfo.minViableRegion.maxPossibleSizeOriginal, registerMinViableRegionInfo.minViableRegion.maxPossibleSize);
-    registerMinViableRegionInfo.minViableRegion.cornerMask = GetJsonValueByPath<uint8_t>(v, "/registerMinViableRegionInfo/minViableRegion/cornerMask", 0);
-    registerMinViableRegionInfo.minViableRegion.cornerMaskOriginal = GetJsonValueByPath<uint8_t>(v, "/registerMinViableRegionInfo/minViableRegion/cornerMaskOriginal", 0);
-    registerMinViableRegionInfo.occlusionFreeCornerMask = GetJsonValueByPath<uint8_t>(v, "/registerMinViableRegionInfo/occlusionFreeCornerMask", 0);
-    const uint8_t registrationMode = GetJsonValueByPath<uint8_t>(v, "/registerMinViableRegionInfo/registrationMode", mujin::MVRRM_Drag);
-    if( registrationMode > mujin::MVRRM_PerpendicularDrag ) {
-        throw MujinException(str(boost::format("got unexpected value %d when receiving /registerMinViableRegionInfo/registrationMode. assuming 'drag'")%(int)registrationMode), MEC_InvalidArguments);
-    }
-    else {
-        registerMinViableRegionInfo.registrationMode = static_cast<mujin::MinViableRegionRegistrationMode>(registrationMode);
-    }
-    registerMinViableRegionInfo.maxPossibleSizePadding = GetJsonValueByPath<double>(v, "/registerMinViableRegionInfo/maxPossibleSizePadding", 30);
-    registerMinViableRegionInfo.skipAppendingToObjectSet = GetJsonValueByPath<bool>(v, "/registerMinViableRegionInfo/skipAppendingToObjectSet", false);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/liftedWorldOffset", registerMinViableRegionInfo.liftedWorldOffset);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/minCandidateSize", registerMinViableRegionInfo.minCandidateSize);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/maxCandidateSize", registerMinViableRegionInfo.maxCandidateSize);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/fullDofValues", registerMinViableRegionInfo.fullDofValues);
-    LoadJsonValueByPath(v, "/registerMinViableRegionInfo/connectedBodyActiveStates", registerMinViableRegionInfo.connectedBodyActiveStates);
 
     removeObjectFromObjectListInfos.clear();
     if( v.HasMember("removeObjectsFromObjectList") && v["removeObjectsFromObjectList"].IsArray()) {
