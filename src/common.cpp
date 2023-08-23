@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "common.h"
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 bool PairStringLengthCompare(const std::pair<std::string, std::string>&p0, const std::pair<std::string, std::string>&p1)
 {
@@ -113,11 +113,11 @@ void ConvertTimestampToFloat(const std::string& in,
         const std::size_t closingCurly = in.substr(timestampbegin, len).find("}");
         if (comma == std::string::npos && closingCurly == std::string::npos)
         {
-            throw mujinclient::MujinException(boost::str(boost::format("error while converting timestamp value format for %s")%in), mujinclient::MEC_Failed);
+            throw mujinplanningclient::MujinException(boost::str(boost::format("error while converting timestamp value format for %s")%in), mujinplanningclient::MEC_Failed);
         }
         const std::size_t timestampend = timestampbegin + (comma < closingCurly ? comma : closingCurly);
         if (timestampend == std::string::npos) {
-            throw mujinclient::MujinException(boost::str(boost::format("error while converting timestamp value format for %s")%in), mujinclient::MEC_Failed);
+            throw mujinplanningclient::MujinException(boost::str(boost::format("error while converting timestamp value format for %s")%in), mujinplanningclient::MEC_Failed);
         }
         const std::size_t period = in.substr(timestampbegin, len).find(".");
 
@@ -133,4 +133,4 @@ void ConvertTimestampToFloat(const std::string& in,
     }
 }
 
-} // namespace mujinclient
+} // namespace mujinplanningclient

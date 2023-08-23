@@ -1,6 +1,6 @@
 // -*- coding: utf-8 -*-
 // Copyright (C) 2012-2022 MUJIN Inc.
-#include <mujincontrollerclient/mujinjson.h>
+#include <mujinplanningclient/mujinjson.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -104,7 +104,7 @@ void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buff
 }
 
 // used for declaration of the specialization
-void __InternalParseJsonFile(rapidjson::Document& d, const char* filename)
+void ParseJsonFile(rapidjson::Document& d, const char* filename)
 {
     std::vector<char> buffer;
     return ParseJsonFile(d, filename, buffer);
