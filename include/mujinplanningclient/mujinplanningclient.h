@@ -636,6 +636,7 @@ protected:
     bool _bIsInitialized;
     bool _bShutdownHeartbeatMonitor;
 };
+typedef boost::shared_ptr<MujinPlanningClient> MujinPlanningClientPtr;
 
 
 
