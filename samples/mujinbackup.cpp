@@ -6,7 +6,7 @@
     example2 for restoring backup: mujinbackup --controller_hostname=yourhost --filename=backup.tar.gz --restore --restore_config=1 --restore_media=0 # restore only config even though backup.tar.gz has media backup
  */
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>
@@ -16,7 +16,7 @@
 #undef GetUserName // clashes with ControllerClient::GetUserName
 #endif // defined(_WIN32) || defined(_WIN64)
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 namespace bpo = boost::program_options;
 using namespace std;
 

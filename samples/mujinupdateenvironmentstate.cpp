@@ -1,4 +1,4 @@
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -57,7 +57,7 @@ inline unsigned long long GetMilliTime()
 #endif // _WIN32
 #endif // MUJIN_TIME
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 
@@ -110,7 +110,7 @@ int main(int argc, char ** argv)
     const unsigned int controllerPort = opts["controller_port"].as<unsigned int>();
     const std::string controllerUsernamePass = opts["controller_username_password"].as<std::string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
-    const std::string binpickingTaskScenePk = opts["binpicking_task_scenepk"].as<std::string>();
+    const std::string mujinPlanningClientScenePk = opts["binpicking_task_scenepk"].as<std::string>();
     const std::string robotname = opts["robotname"].as<std::string>();
     const std::string objectupdatename = opts["objectupdatename"].as<std::string>();
     const std::string objecturi = opts["objecturi"].as<std::string>();
@@ -131,21 +131,21 @@ int main(int argc, char ** argv)
         std::stringstream url_ss;
         url_ss << "http://"<< controllerIp << ":" << controllerPort;
         ControllerClientPtr controllerclient = CreateControllerClient(controllerUsernamePass, url_ss.str());
-        SceneResourcePtr scene(new SceneResource(controllerclient, binpickingTaskScenePk));
+        SceneResourcePtr scene(new SceneResource(controllerclient, mujinPlanningClientScenePk));
 
         // initialize binpicking task
-        BinPickingTaskResourcePtr pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+std::string("task1"), tasktype);
+        MujinPlanningClientResourcePtr pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+std::string("task1"), tasktype);
         std::string userinfo_json = "{\"username\": \"" + controllerclient->GetUserName() + "\", \"locale\": \"" + locale + "\"}";
-        std::cout << "initialzing binpickingtask in UpdateEnvironmentThread with userinfo=" + userinfo_json << " taskparameters=" << taskparameters << " slaverequestid=" << slaverequestid << std::endl;
-        pBinpickingTask->Initialize(taskparameters, controllerCommandTimeout, userinfo_json, slaverequestid);
+        std::cout << "initialzing mujinplanningclient in UpdateEnvironmentThread with userinfo=" + userinfo_json << " taskparameters=" << taskparameters << " slaverequestid=" << slaverequestid << std::endl;
+        pMujinPlanningClient->Initialize(taskparameters, controllerCommandTimeout, userinfo_json, slaverequestid);
 
         // populate dummy data
-        std::vector<BinPickingTaskResource::DetectedObject> detectedobjects;
+        std::vector<MujinPlanningClientResource::DetectedObject> detectedobjects;
         std::vector<float> points;
         std::string resultstate;
 
         // create object
-        BinPickingTaskResource::DetectedObject detectedobject;
+        MujinPlanningClientResource::DetectedObject detectedobject;
         detectedobject.name = str(boost::format("%s_%d") % objectupdatename % 0);
         detectedobject.object_uri = objecturi;
         Transform transform;
@@ -178,7 +178,7 @@ int main(int argc, char ** argv)
         std::string inputdataunit = "mm";
         while (1) {
             try {
-                pBinpickingTask->UpdateEnvironmentState(objectupdatename, detectedobjects, points, resultstate, pointsize, obstaclename, inputdataunit, controllerCommandTimeout);
+                pMujinPlanningClient->UpdateEnvironmentState(objectupdatename, detectedobjects, points, resultstate, pointsize, obstaclename, inputdataunit, controllerCommandTimeout);
                 std::cout << "UpdateEnvironmentState with " << detectedobjects.size() << " objects " << (points.size()/3.) << " points" << std::endl;
             }
             catch(const std::exception& ex) {

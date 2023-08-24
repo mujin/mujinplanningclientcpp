@@ -3,18 +3,18 @@
 
     Ideal usage of MUJIN Controller on DensoWave Wincaps RC8 files running on Windows.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/thread/thread.hpp> // for sleep
 
 #include <iostream>
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 int main(int argc, char ** argv)
 {
     if( argc < 2 ) {
-        std::cout << "need username:password. Example: mujinclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
+        std::cout << "need username:password. Example: mujinplanningclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
         return 1;
     }
     try {
@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
         std::string scenepk = controller->GetScenePrimaryKeyFromURI_UTF8(sceneuri);
 
         // upload a Wincaps file
-        controller->SyncUpload_UTF8("../share/mujincontrollerclient/densowave_wincaps_data/vs060a3_test0/test0.WPJ", "mujin:/vs060a3_test0/", "wincaps");
+        controller->SyncUpload_UTF8("../share/mujinplanningclient/densowave_wincaps_data/vs060a3_test0/test0.WPJ", "mujin:/vs060a3_test0/", "wincaps");
 
         // Register the scene, this also imports all PAC Script programs into "itlplanning" tasks
         SceneResourcePtr scene = controller->RegisterScene_UTF8(sceneuri, "wincaps");

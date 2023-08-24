@@ -6,7 +6,7 @@
     example2: mujincreateinstobject --controller_hostname=yourhost --name work_0x1a --translate 100 200 -300
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <boost/bind.hpp>
@@ -17,7 +17,7 @@
 #undef GetUserName // clashes with ControllerClient::GetUserName
 #endif // defined(_WIN32) || defined(_WIN64)
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 namespace bpo = boost::program_options;
 using namespace std;
 

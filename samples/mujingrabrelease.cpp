@@ -6,7 +6,7 @@
     example2: mujingrabrelease --controller_hostname=yourhost --robotname=yourrobot --targetname work_a_1 --movealong 2 --moveby -100  # grab work_a_1 and move -100 along axis 2 and releaes
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>
@@ -16,7 +16,7 @@
 #undef GetUserName // clashes with ControllerClient::GetUserName
 #endif // defined(_WIN32) || defined(_WIN64)
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 namespace bpo = boost::program_options;
 using namespace std;
 
@@ -85,7 +85,7 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
 }
 
 
-void GrabRelease(BinPickingTaskResourcePtr& pBinpickingTask,
+void GrabRelease(MujinPlanningClientResourcePtr& pMujinPlanningClient,
                  const string& goaltype,
                  vector<double>& goals,
                  double speed,
@@ -98,29 +98,29 @@ void GrabRelease(BinPickingTaskResourcePtr& pBinpickingTask,
     cout << "moving tool to "
          << goals[0] << ", " << goals[1] << ", " << goals[2] << ", "
          << goals[3] << ", " << goals[4] << ", " << goals[5] << endl;
-    pBinpickingTask->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
+    pMujinPlanningClient->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
 
-    pBinpickingTask->Grab(targetname);
+    pMujinPlanningClient->Grab(targetname);
 
     goals[movealong] += moveby;
     cout << "after grabbing " << targetname << ", moving tool to "
          << goals[0] << ", " << goals[1] << ", " << goals[2] << ", "
          << goals[3] << ", " << goals[4] << ", " << goals[5] << endl;
-    pBinpickingTask->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
+    pMujinPlanningClient->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
 
-    pBinpickingTask->Release(targetname);
+    pMujinPlanningClient->Release(targetname);
     goals[movealong] -= moveby;
     cout << "after releasing " << targetname << ", moving tool to "
          << goals[0] << ", " << goals[1] << ", " << goals[2] << ", "
          << goals[3] << ", " << goals[4] << ", " << goals[5] << endl;
-    pBinpickingTask->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
+    pMujinPlanningClient->MoveToHandPosition(goaltype, goals, robotname, toolname, speed, 30);
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
@@ -176,9 +176,9 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("temp task"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("temp task"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initializing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initializing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
     s_robotname = opts["robotname"].as<string>();
     if (s_robotname.empty()) {
@@ -199,7 +199,7 @@ void InitializeTask(const bpo::variables_map& opts,
 
     
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, 10, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, 10, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 int main(int argc, char ** argv)
@@ -220,11 +220,11 @@ int main(int argc, char ** argv)
     const double moveby =  opts["moveby"].as<double>();
 
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
-    InitializeTask(opts, pBinpickingTask);
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
+    InitializeTask(opts, pMujinPlanningClient);
 
 
-    GrabRelease(pBinpickingTask,
+    GrabRelease(pMujinPlanningClient,
                 goaltype, goals, speed, s_robotname, toolname, targetname,
                 movealong, moveby);
 

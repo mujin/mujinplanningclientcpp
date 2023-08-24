@@ -5,7 +5,7 @@
     example: mujincreateikparam --controller_hostname localhost --task_scenepk machine.mujin.dae --iktype Transform6D --object_name object --taskparameters '{"robotname":"robot","toolname":"tool"}'
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 #include <cmath>
 
@@ -14,7 +14,7 @@
 #endif // defined(_WIN32) || defined(_WIN64)
 
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 #include <boost/bind.hpp>
@@ -79,12 +79,12 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
     return true;
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
                     boost::shared_ptr<zmq::context_t>& zmqcontext,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
@@ -140,16 +140,16 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initialzing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initialzing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 
 }
 
 void ReinitializeTask(boost::shared_ptr<zmq::context_t>& zmqcontext,
-                      BinPickingTaskResourcePtr& pBinpickingTask)
+                      MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string taskparameters("{\"robotname\": \"robot\"}");
     const unsigned int taskZmqPort(11000);
@@ -157,7 +157,7 @@ void ReinitializeTask(boost::shared_ptr<zmq::context_t>& zmqcontext,
     const string userinfo("");
     const string slaverequestid("controller71_slave0");
     const unsigned int heartbeatPort(11001);
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 int main(int argc, char ** argv)
@@ -170,17 +170,17 @@ int main(int argc, char ** argv)
     }
 
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    InitializeTask(opts, zmqcontext, pBinpickingTask);
+    InitializeTask(opts, zmqcontext, pMujinPlanningClient);
 
     const double timeout = opts["controller_command_timeout"].as<double>();
     const string unit = opts["unit"].as<string>();
 
     // get manip position
     const string object_name = opts["object_name"].as<string>();
-    BinPickingTaskResource::ResultComputeIkParamPosition resultPosition;
-    pBinpickingTask->ComputeIkParamPosition(resultPosition,object_name);
+    MujinPlanningClientResource::ResultComputeIkParamPosition resultPosition;
+    pMujinPlanningClient->ComputeIkParamPosition(resultPosition,object_name);
     cout << "ComputeIkParamPosition done" << endl;
 
     stringstream urlss;
@@ -213,14 +213,14 @@ int main(int argc, char ** argv)
         ik->SetJSON(mujinjson::GetJsonStringByKey("quaternion",resultPosition.quaternion));
     }
 
-    BinPickingTaskResource::ResultComputeIKFromParameters result;
+    MujinPlanningClientResource::ResultComputeIKFromParameters result;
     vector<string> iknames;
     iknames.push_back("sample");
-    pBinpickingTask->ComputeIKFromParameters(result,object_name,iknames,0);
-    BinPickingTaskResource::ResultGetBinpickingState taskstate;
+    pMujinPlanningClient->ComputeIKFromParameters(result,object_name,iknames,0);
+    MujinPlanningClientResource::ResultGetBinpickingState taskstate;
     rapidjson::Document taskparametersParsed;
     mujinjson::ParseJson(taskparametersParsed,opts["taskparameters"].as<string>());
-    pBinpickingTask->GetPublishedTaskState(taskstate, mujinjson::GetStringJsonValueByKey(taskparametersParsed,"robotname"), "mm", timeout);
+    pMujinPlanningClient->GetPublishedTaskState(taskstate, mujinjson::GetStringJsonValueByKey(taskparametersParsed,"robotname"), "mm", timeout);
 
     vector<double> dofResiduals;
     double minDofResidual=HUGE_VAL;

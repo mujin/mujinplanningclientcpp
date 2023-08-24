@@ -20,17 +20,17 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
-#include <mujincontrollerclient/zmq.hpp>
-#include <mujincontrollerclient/mujinexceptions.h>
+#include <mujinplanningclient/zmq.hpp>
+#include <mujinplanningclient/mujinexceptions.h>
 
 namespace mujinzmq
 {
 
-#include "mujincontrollerclient/config.h"
+#include "mujinplanningclient/config.h"
 
 /** \brief Base class for subscriber
  */
-class MUJINCLIENT_API ZmqSubscriber
+class MUJINPLANNINGCLIENT_API ZmqSubscriber
 {
 public:
     ZmqSubscriber(const std::string& host, const unsigned int port);
@@ -49,7 +49,7 @@ protected:
 
 /** \brief Base class for publisher
  */
-class MUJINCLIENT_API ZmqPublisher
+class MUJINPLANNINGCLIENT_API ZmqPublisher
 {
 public:
     ZmqPublisher(const unsigned int port);
@@ -75,7 +75,7 @@ typedef boost::function<void (const unsigned int)> CheckPreemptFn;
 
 /** \brief Base class for client
  */
-class MUJINCLIENT_API ZmqClient
+class MUJINPLANNINGCLIENT_API ZmqClient
 {
 public:
     ZmqClient(const std::string& host, const unsigned int port, const CheckPreemptFn& preemptfn=CheckPreemptFn());
@@ -102,7 +102,7 @@ protected:
 
 /** \brief Base class for server
  */
-class MUJINCLIENT_API ZmqServer
+class MUJINPLANNINGCLIENT_API ZmqServer
 {
 public:
     ZmqServer(const unsigned int port);

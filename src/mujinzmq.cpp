@@ -1,4 +1,4 @@
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/mujinzmq.h"
 
 #include <boost/thread.hpp>
 #if BOOST_VERSION > 104800

@@ -5,7 +5,7 @@
     example1: mujinuploadfile --controller_hostname=yourhost --filename=sample.mujin.dae
  */
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>

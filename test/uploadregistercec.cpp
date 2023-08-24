@@ -8,7 +8,7 @@ int main(int argc, char ** argv)
     try {
         ControllerClientPtr controller = CreateControllerFromCommandLine(argc,argv);
 
-        std::string sourcefilename_utf8 = "../share/mujincontrollerclient/robodia_demo1/robodia_demo1.xml";
+        std::string sourcefilename_utf8 = "../share/mujinplanningclient/robodia_demo1/robodia_demo1.xml";
         std::string uridir_utf8 = "mujin:/testupload/";
         std::string uri_utf8 = "mujin:/testupload/robodia_demo1.xml";
 

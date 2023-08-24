@@ -3,7 +3,7 @@
 
     Shows how to quickly register a scene and execute a task and get the results. Because the scene is directly used instead of imported.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/thread/thread.hpp> // for sleep
 

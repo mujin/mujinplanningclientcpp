@@ -11,29 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/** \file mujincontrollerclient.h
+/** \file mujinplanningclient.h
     \brief  Defines the public headers of the MUJIN Controller Client
  */
-#ifndef MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_ZMQ_H
-#define MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_ZMQ_H
+#ifndef MUJIN_CONTROLLERCLIENT_MUJINPLANNINGCLIENT_ZMQ_H
+#define MUJIN_CONTROLLERCLIENT_MUJINPLANNINGCLIENT_ZMQ_H
 
-#include "mujincontrollerclient/binpickingtask.h"
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/mujinplanningclient.h"
+#include "mujinplanningclient/mujinzmq.h"
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 /** \brief client to mujin controller via zmq socket connection
  */
-class ZmqMujinControllerClient;
-typedef boost::shared_ptr<ZmqMujinControllerClient> ZmqMujinControllerClientPtr;
-typedef boost::weak_ptr<ZmqMujinControllerClient> ZmqMujinControllerClientWeakPtr;
+class ZmqMujinPlanningClient;
+typedef boost::shared_ptr<ZmqMujinPlanningClient> ZmqMujinPlanningClientPtr;
+typedef boost::weak_ptr<ZmqMujinPlanningClient> ZmqMujinPlanningClientWeakPtr;
 
-class MUJINCLIENT_API BinPickingTaskZmqResource : public BinPickingTaskResource
+class MUJINPLANNINGCLIENT_API BinpickingTaskZmqResource : public MujinPlanningClient
 {
 public:
-    BinPickingTaskZmqResource(ControllerClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
+    BinpickingTaskZmqResource(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
 
-    ~BinPickingTaskZmqResource();
+    ~BinpickingTaskZmqResource();
 
     void ExecuteCommand(const std::string& taskparameters, rapidjson::Document &pt, const double timeout /* [sec] */=0.0, const bool getresult=true) override;
 
@@ -46,8 +46,8 @@ public:
     void _HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout);
 
 private:
-    ZmqMujinControllerClientPtr _zmqmujincontrollerclient;
+    ZmqMujinPlanningClientPtr _zmqmujinplanningclient;
 };
 
-} // namespace mujinclient
+} // namespace mujinplanningclient
 #endif
