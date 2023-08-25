@@ -641,7 +641,7 @@ typedef boost::shared_ptr<MujinPlanningClient> MujinPlanningClientPtr;
 
 class BinpickingTaskZmqResource;
 
-MujinPlanningClientPtr CreatePlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
+MUJINPLANNINGCLIENT_API MujinPlanningClientPtr CreatePlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
 
 namespace utils {
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& string);
