@@ -68,6 +68,7 @@ struct CropContainerMarginsXYZXYZ
 
 typedef boost::shared_ptr<CropContainerMarginsXYZXYZ> CropContainerMarginsXYZXYZPtr;
 
+
 class MUJINPLANNINGCLIENT_API MujinPlanningClient
 {
 public:
@@ -638,7 +639,9 @@ protected:
 };
 typedef boost::shared_ptr<MujinPlanningClient> MujinPlanningClientPtr;
 
+class BinpickingTaskZmqResource;
 
+MujinPlanningClientPtr CreatePlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
 
 namespace utils {
 MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& string);

@@ -20,6 +20,7 @@
 
 #ifdef MUJIN_USEZMQ
 #include "mujinplanningclient/zmq.hpp"
+#include "binpickingtaskzmq.h"
 #endif
 
 #ifdef _WIN32
@@ -1824,6 +1825,17 @@ void MujinPlanningClient::_HeartbeatMonitorThread(const double reinitializetimeo
     }
 #else
     MUJIN_LOG_ERROR("cannot create heartbeat monitor since not compiled with libzmq");
+#endif
+}
+
+
+MujinPlanningClientPtr CreatePlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName)
+{
+#ifdef MUJIN_USEZMQ
+    return boost::make_shared<BinpickingTaskZmqResource>(scenebasename, tasktype, baseuri, userName);
+#else
+    MUJIN_LOG_ERROR("You've compiled the planning client without ZMQ! This is only possible for backwards compatibility so is unsupported and will disappear soon. Please use ZMQ!");
+    return boost::make_shared<MujinPlanningClient>(scenebasename, tasktype, baseuri, userName);
 #endif
 }
 
