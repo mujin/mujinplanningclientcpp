@@ -5,7 +5,7 @@
     example1: mujindeleteallscenes --controller_hostname=yourhost
  */
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>
@@ -22,7 +22,7 @@ const char s_filesep = '/';
 const wchar_t s_wfilesep = L'/';
 #endif // defined(_WIN32) || defined(_WIN64)
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 namespace bpo = boost::program_options;
 using namespace std;
 

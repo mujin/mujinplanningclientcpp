@@ -3,18 +3,18 @@
 
     Shows how to quickly register a scene and execute a task and get the results. Because the scene is directly used instead of imported.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/thread/thread.hpp> // for sleep
 
 #include <iostream>
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 int main(int argc, char ** argv)
 {
     if( argc < 2 ) {
-        std::cout << "need username:password. Example: mujinclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
+        std::cout << "need username:password. Example: mujinplanningclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
         return 1;
     }
     try {
@@ -36,7 +36,7 @@ int main(int argc, char ** argv)
         std::string sceneuri = "mujin:/densowave_wincaps_data/vs060a3_test0/test0.WPJ";
         std::string scenepk = controller->GetScenePrimaryKeyFromURI_UTF8(sceneuri);
 
-        controller->SyncUpload_UTF8("../share/mujincontrollerclient/densowave_wincaps_data/vs060a3_test0/test0.WPJ", "mujin:/densowave_wincaps_data/vs060a3_test0/", "wincaps");
+        controller->SyncUpload_UTF8("../share/mujinplanningclient/densowave_wincaps_data/vs060a3_test0/test0.WPJ", "mujin:/densowave_wincaps_data/vs060a3_test0/", "wincaps");
         SceneResourcePtr scene = controller->RegisterScene_UTF8(sceneuri, "wincaps");
 
         TaskResourcePtr task = scene->GetOrCreateTaskFromName_UTF8("task0", "itlplanning");

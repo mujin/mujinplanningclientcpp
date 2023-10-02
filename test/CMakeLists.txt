@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-include_directories(${MUJINCLIENT_INCLUDE_LOCAL_DIRS})
-link_directories(${MUJINCLIENT_LINK_DIRS})
+include_directories(${MUJINPLANNINGCLIENT_INCLUDE_LOCAL_DIRS})
+link_directories(${MUJINPLANNINGCLIENT_LINK_DIRS})
 
 remove_definitions("-DBOOST_ENABLE_ASSERT_HANDLER")
 
@@ -21,8 +21,8 @@ macro(build_test name)
   link_directories(${LOG4CXX_LIBDIR})
   add_executable(${name} ${name}.cpp)
   set_target_properties(${name} PROPERTIES COMPILE_FLAGS "${Boost_CFLAGS}" LINK_FLAGS "")
-  add_dependencies(${name} libmujincontrollerclient)
-  target_link_libraries (${name} libmujincontrollerclient ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${EXTRA_LIBRARIES} ${LOG4CXX_LIBRARIES})
+  add_dependencies(${name} libmujinplanningclient)
+  target_link_libraries (${name} libmujinplanningclient ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${EXTRA_LIBRARIES} ${LOG4CXX_LIBRARIES})
 endmacro(build_test)
 
 build_test(settaskparameters)

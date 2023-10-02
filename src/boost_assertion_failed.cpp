@@ -1,7 +1,7 @@
 #ifdef BOOST_ENABLE_ASSERT_HANDLER
 
 #include <boost/format.hpp>
-#include <mujincontrollerclient/mujinexceptions.h>
+#include <mujinplanningclient/mujinexceptions.h>
 
 // Derived from https://gcc.gnu.org/wiki/Visibility
 #if !(defined _WIN32 || defined __CYGWIN__) && __GNUC__ >= 4

@@ -5,7 +5,7 @@
     example1: mujinjog --controller_hostname=yourhost --filename=yourstlfile
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>
@@ -15,7 +15,7 @@
 #undef GetUserName // clashes with ControllerClient::GetUserName
 #endif // defined(_WIN32) || defined(_WIN64)
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 namespace bpo = boost::program_options;
 using namespace std;
 
@@ -73,11 +73,11 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
     return true;
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
@@ -133,12 +133,12 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initialzing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initialzing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, 10, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, 10, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 int main(int argc, char ** argv)
@@ -150,8 +150,8 @@ int main(int argc, char ** argv)
         return 1;
     }
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
-    InitializeTask(opts, pBinpickingTask);
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
+    InitializeTask(opts, pMujinPlanningClient);
 
     const size_t numpoints(1000);
     std::vector<float> pointcloud(3*numpoints);
@@ -161,11 +161,11 @@ int main(int argc, char ** argv)
         pointcloud[3*i+2] = i / 100 * 100;
     }
     const std::string name("point_cloud_steps");
-    pBinpickingTask->AddPointCloudObstacle(pointcloud, 1, name);
+    pMujinPlanningClient->AddPointCloudObstacle(pointcloud, 1, name);
 
     cout << "added point cloud named \"" << name << "\". Enjoy before being deleted in 10 seconds!" << endl;
     boost::this_thread::sleep(boost::posix_time::seconds(10));
-    pBinpickingTask->RemoveObjectsWithPrefix(name);
+    pMujinPlanningClient->RemoveObjectsWithPrefix(name);
 
     return 0;
 }

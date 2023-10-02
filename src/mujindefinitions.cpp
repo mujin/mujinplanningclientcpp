@@ -1,7 +1,7 @@
 // -*- coding: utf-8 -*-
 // Copyright (C) 2012-2023 MUJIN Inc.
-#include <mujincontrollerclient/mujindefinitions.h>
-#include <mujincontrollerclient/mujinexceptions.h>
+#include <mujinplanningclient/mujindefinitions.h>
+#include <mujinplanningclient/mujinexceptions.h>
 
 namespace mujin {
 
@@ -146,7 +146,7 @@ ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pMo
     throw mujinclient::MujinException(str(boost::format("Failed to parse '%s' as ExecutionVerificationMode")%pModeStr), mujinclient::MEC_InvalidArguments);
 }
 
-MUJINCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode)
+MUJINPLANNINGCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode)
 {
     switch(mode) {
     case MVRRM_None: return "None";
@@ -157,7 +157,7 @@ MUJINCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRe
     return "(unknown)";
 }
 
-MUJINCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegistrationModeFromString(const char* pModeStr, MinViableRegionRegistrationMode defaultMode)
+MUJINPLANNINGCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegistrationModeFromString(const char* pModeStr, MinViableRegionRegistrationMode defaultMode)
 {
     if( pModeStr[0] == 0 ) {
         return defaultMode;

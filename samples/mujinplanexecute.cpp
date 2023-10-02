@@ -6,7 +6,7 @@
     example2: mujinmovetool --controller_hostname=yourhost --robotname=yourrobot --goals=700 600 500 0 0 180 --goaltype=translationdirection5d --movelinear=true
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -14,7 +14,7 @@
 #endif // defined(_WIN32) || defined(_WIN64)
 
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 
@@ -87,11 +87,11 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
     return true;
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
@@ -147,9 +147,9 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initialzing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initialzing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
     s_robotname = opts["robotname"].as<string>();
     if (s_robotname.empty()) {
@@ -170,13 +170,13 @@ void InitializeTask(const bpo::variables_map& opts,
 
     
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 /// \brief convert state of bin picking task to string
 /// \param state state to convert to string
 /// \return state converted to string
-string ConvertStateToString(const BinPickingTaskResource::ResultGetBinpickingState& state)
+string ConvertStateToString(const MujinPlanningClientResource::ResultGetBinpickingState& state)
 {
     if (state.currentJointValues.empty() || state.currentToolValues.size() < 6) {
         stringstream ss;
@@ -202,7 +202,7 @@ string ConvertStateToString(const BinPickingTaskResource::ResultGetBinpickingSta
 /// \param toolname tool name
 /// \param movelinear whether to move in line or not
 /// \param checkcollision whether to move in line or not
-void Run(BinPickingTaskResourcePtr& pTask,
+void Run(MujinPlanningClientResourcePtr& pTask,
          const vector<Real>& goals,
          double speed,
          const string& robotname,
@@ -215,7 +215,7 @@ void Run(BinPickingTaskResourcePtr& pTask,
 
     if (trajectoryLoadPath.empty()) {
         // print state
-        BinPickingTaskResource::ResultGetBinpickingState result;
+        MujinPlanningClientResource::ResultGetBinpickingState result;
         pTask->GetPublishedTaskState(result, robotname, "mm", 1.0);
         cout << "initial state:\n" << ConvertStateToString(result) << endl;
 
@@ -224,7 +224,7 @@ void Run(BinPickingTaskResourcePtr& pTask,
             jointindices[i] = i;
         }
         // start moving
-        BinPickingTaskResource::ResultMoveJoints moveresult;
+        MujinPlanningClientResource::ResultMoveJoints moveresult;
         pTask->MoveJoints(goals, jointindices, 10, speed, moveresult, timeout, &traj);
     }
     else {
@@ -240,7 +240,7 @@ void Run(BinPickingTaskResourcePtr& pTask,
 
     pTask->ExecuteSingleXMLTrajectory(traj, filtertraj);
     // print state
-    BinPickingTaskResource::ResultGetBinpickingState result;
+    MujinPlanningClientResource::ResultGetBinpickingState result;
     pTask->GetPublishedTaskState(result, robotname, "mm", 1.0);
     cout << "Finished executing trajectory:\n" << ConvertStateToString(result) << endl;
 }
@@ -265,11 +265,11 @@ int main(int argc, char ** argv)
     const bool filtertraj = opts["filtertraj"].as<bool>();
     
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
-    InitializeTask(opts, pBinpickingTask);
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
+    InitializeTask(opts, pMujinPlanningClient);
 
     // do interesting part
-    Run(pBinpickingTask, goals, speed, s_robotname, loadTrajectoryPath, saveTrajectoryPath, filtertraj, timeout);
+    Run(pMujinPlanningClient, goals, speed, s_robotname, loadTrajectoryPath, saveTrajectoryPath, filtertraj, timeout);
 
     return 0;
 }

@@ -2,7 +2,7 @@
 #ifndef MUJINCONTROLLER_TESTUTILS_H
 #define MUJINCONTROLLER_TESTUTILS_H
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 
 mujinclient::ControllerClientPtr CreateControllerFromCommandLine(int argc, char ** argv)
