@@ -17,6 +17,9 @@
 #ifndef MUJIN_EXCEPTIONS_H
 #define MUJIN_EXCEPTIONS_H
 
+#include <string>
+#include <exception>
+
 namespace mujinclient {
 
 #include <mujinplanningclient/config.h>
