@@ -13,68 +13,68 @@
 // limitations under the License.
 
 #include "common.h"
-#include "controllerclientimpl.h"
 #include "binpickingtaskzmq.h"
-#include "mujincontrollerclient/mujinzmq.h"
+#include "mujinplanningclient/mujinzmq.h"
 
 #include <algorithm> // find
 
 #include "logging.h"
-#include "mujincontrollerclient/mujinjson.h"
+#include "mujinplanningclient/mujinjson.h"
 
-MUJIN_LOGGER("mujin.controllerclientcpp.binpickingtask.zmq");
+MUJIN_LOGGER("mujin.controllerclientcpp.mujinplanningclient.zmq");
 
 using namespace mujinzmq;
 
-namespace mujinclient {
+namespace mujinplanningclient {
 using namespace utils;
 using namespace mujinjson;
+using namespace mujinclient;
 
-class ZmqMujinControllerClient : public mujinzmq::ZmqClient
+class ZmqMujinPlanningClient : public mujinzmq::ZmqClient
 {
 
 public:
-    ZmqMujinControllerClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port);
+    ZmqMujinPlanningClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port);
 
-    virtual ~ZmqMujinControllerClient();
+    virtual ~ZmqMujinPlanningClient();
 
 };
 
-ZmqMujinControllerClient::ZmqMujinControllerClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port) : ZmqClient(host, port)
+ZmqMujinPlanningClient::ZmqMujinPlanningClient(boost::shared_ptr<zmq::context_t> context, const std::string& host, const int port) : ZmqClient(host, port)
 {
     _InitializeSocket(context);
 }
 
-ZmqMujinControllerClient::~ZmqMujinControllerClient()
+ZmqMujinPlanningClient::~ZmqMujinPlanningClient()
 {
     // _DestroySocket() is called in  ~ZmqClient()
 }
 
-BinPickingTaskZmqResource::BinPickingTaskZmqResource(ControllerClientPtr c, const std::string& pk, const std::string& scenepk, const std::string& tasktype) : BinPickingTaskResource(c, pk, scenepk, tasktype)
+BinpickingTaskZmqResource::BinpickingTaskZmqResource(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName) : MujinPlanningClient(scenebasename, tasktype, baseuri, userName)
 {
-    _callerid = str(boost::format("controllerclientcpp%s_zmq")%MUJINCLIENT_VERSION_STRING);
+    _callerid = str(boost::format("planningclientcpp%s_zmq")%MUJINPLANNINGCLIENT_VERSION_STRING);
 }
 
-BinPickingTaskZmqResource::~BinPickingTaskZmqResource()
+BinpickingTaskZmqResource::~BinpickingTaskZmqResource()
 {
 }
 
-void BinPickingTaskZmqResource::Initialize(const std::string& defaultTaskParameters,  const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq, const double reinitializetimeout, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
+void BinpickingTaskZmqResource::Initialize(const std::string& defaultTaskParameters,  const int zmqPort, const int heartbeatPort, boost::shared_ptr<zmq::context_t> zmqcontext, const bool initializezmq, const double reinitializetimeout, const double timeout, const std::string& userinfo, const std::string& slaverequestid)
 {
-    BinPickingTaskResource::Initialize(defaultTaskParameters, zmqPort, heartbeatPort, zmqcontext, initializezmq, reinitializetimeout, timeout, userinfo, slaverequestid);
+    MujinPlanningClient::Initialize(defaultTaskParameters, zmqPort, heartbeatPort, zmqcontext, initializezmq, reinitializetimeout, timeout, userinfo, slaverequestid);
 
     if (initializezmq) {
         InitializeZMQ(reinitializetimeout, timeout);
     }
 
-    _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-    if (!_zmqmujincontrollerclient) {
+    _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+    if (!_zmqmujinplanningclient) {
         throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
     }
     if (!_pHeartbeatMonitorThread) {
         _bShutdownHeartbeatMonitor = false;
         if (reinitializetimeout > 0 ) {
-            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinPickingTaskZmqResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
+            _pHeartbeatMonitorThread.reset(new boost::thread(boost::bind(&BinpickingTaskZmqResource::_HeartbeatMonitorThread, this, reinitializetimeout, timeout)));
         }
     }
 }
@@ -89,7 +89,7 @@ void _LogTaskParametersAndThrow(const std::string& taskparameters) {
     throw MujinException(boost::str(boost::format("Timed out receiving response of command with taskparameters=%s")%errstr), MEC_Timeout);
 }
 
-void BinPickingTaskZmqResource::ExecuteCommand(const std::string& taskparameters, rapidjson::Document &pt, const double timeout /* [sec] */, const bool getresult)
+void BinpickingTaskZmqResource::ExecuteCommand(const std::string& taskparameters, rapidjson::Document &pt, const double timeout /* [sec] */, const bool getresult)
 {
     std::stringstream ss; ss << std::setprecision(std::numeric_limits<double>::digits10+1);
     ss << "{\"fnname\": \"";
@@ -122,7 +122,7 @@ void BinPickingTaskZmqResource::ExecuteCommand(const std::string& taskparameters
     }
 }
 
-void BinPickingTaskZmqResource::ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout)
+void BinpickingTaskZmqResource::ExecuteCommand(rapidjson::Value& rTaskParameters, rapidjson::Document& rOutput, const double timeout)
 {
     rapidjson::Document rCommand; rCommand.SetObject();
     mujinjson::SetJsonValueByKey(rCommand, "fnname", _tasktype == "binpicking" ? "binpicking.RunCommand" : "RunCommand");
@@ -166,27 +166,27 @@ void BinPickingTaskZmqResource::ExecuteCommand(rapidjson::Value& rTaskParameters
     }
 }
 
-void BinPickingTaskZmqResource::_ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout, const bool getresult)
+void BinpickingTaskZmqResource::_ExecuteCommandZMQ(const std::string& command, rapidjson::Document& rOutput, const double timeout, const bool getresult)
 {
     if (!_bIsInitialized) {
         throw MujinException("BinPicking task is not initialized, please call Initialzie() first.", MEC_Failed);
     }
 
-    if (!_zmqmujincontrollerclient) {
+    if (!_zmqmujinplanningclient) {
         MUJIN_LOG_ERROR("zmqcontrollerclient is not initialized! initialize");
-        _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+        _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
     }
 
     std::string result_ss;
     try {
-        result_ss = _zmqmujincontrollerclient->Call(command, timeout);
+        result_ss = _zmqmujinplanningclient->Call(command, timeout);
     }
     catch (const MujinException& e) {
         MUJIN_LOG_ERROR(e.what());
         if (e.GetCode() == MEC_ZMQNoResponse) {
             MUJIN_LOG_INFO("reinitializing zmq connection with the slave");
-            _zmqmujincontrollerclient.reset(new ZmqMujinControllerClient(_zmqcontext, _mujinControllerIp, _zmqPort));
-            if (!_zmqmujincontrollerclient) {
+            _zmqmujinplanningclient.reset(new ZmqMujinPlanningClient(_zmqcontext, _mujinControllerIp, _zmqPort));
+            if (!_zmqmujinplanningclient) {
                 throw MujinException(boost::str(boost::format("Failed to establish ZMQ connection to mujin controller at %s:%d")%_mujinControllerIp%_zmqPort), MEC_Failed);
             }
         }
@@ -222,15 +222,15 @@ void BinPickingTaskZmqResource::_ExecuteCommandZMQ(const std::string& command, r
     }
 }
 
-void BinPickingTaskZmqResource::InitializeZMQ(const double reinitializetimeout, const double timeout)
+void BinpickingTaskZmqResource::InitializeZMQ(const double reinitializetimeout, const double timeout)
 {
 }
 
-void BinPickingTaskZmqResource::_HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout)
+void BinpickingTaskZmqResource::_HeartbeatMonitorThread(const double reinitializetimeout, const double commandtimeout)
 {
     MUJIN_LOG_DEBUG(str(boost::format("starting controller %s monitoring thread on port %d for slaverequestid=%s.")%_mujinControllerIp%_heartbeatPort%_slaverequestid));
     boost::shared_ptr<zmq::socket_t>  socket;
-    BinPickingTaskResource::ResultHeartBeat heartbeat;
+    MujinPlanningClient::ResultHeartBeat heartbeat;
     heartbeat._slaverequestid = _slaverequestid;
     while (!_bShutdownHeartbeatMonitor) {
         if (!!socket) {
@@ -292,4 +292,4 @@ void BinPickingTaskZmqResource::_HeartbeatMonitorThread(const double reinitializ
 
 
 
-} // end namespace mujinclient
+} // end namespace mujinplanningclient

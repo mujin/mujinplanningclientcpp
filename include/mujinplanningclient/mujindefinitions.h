@@ -18,8 +18,8 @@
 #ifndef MUJIN_CONTROLLERCLIENT_DEFINITIONS_H
 #define MUJIN_CONTROLLERCLIENT_DEFINITIONS_H
 
-#include <mujincontrollerclient/config.h>
-#include <mujincontrollerclient/mujinjson.h>
+#include <mujinplanningclient/config.h>
+#include <mujinplanningclient/mujinjson.h>
 
 #include <ostream>
 
@@ -94,7 +94,7 @@ struct AABB
     std::array<Real,3> extents; ///< half extents of AABB
 };
 
-class MUJINCLIENT_API SensorSelectionInfo : public mujinjson::JsonSerializable
+class MUJINPLANNINGCLIENT_API SensorSelectionInfo : public mujinjson::JsonSerializable
 {
 public:
     SensorSelectionInfo() = default;
@@ -122,7 +122,7 @@ public:
 
 
 /// \brief the picking history being published from the slave. Anytime the robot goes inside of the source container, its pick history will be udpated.
-class MUJINCLIENT_API PickPlaceHistoryItem : public mujinjson::JsonSerializable
+class MUJINPLANNINGCLIENT_API PickPlaceHistoryItem : public mujinjson::JsonSerializable
 {
 public:
     void Reset();
@@ -177,9 +177,9 @@ enum ExecutionVerificationMode : uint8_t
     EVM_PointCloudOnChangeAfterGrab = 6, ///< For dest containers only. Do verification on the real-time point cloud data only when container is known to have changed and after robot has grabbed the part. When robot goes into dest container and leaves, that counts as a change. Enabling this option means the robot will stop more while grabbing object.
 };
 
-MUJINCLIENT_API const char* GetExecutionVerificationModeString(ExecutionVerificationMode mode);
+MUJINPLANNINGCLIENT_API const char* GetExecutionVerificationModeString(ExecutionVerificationMode mode);
 
-MUJINCLIENT_API ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pModeStr, ExecutionVerificationMode defaultMode);
+MUJINPLANNINGCLIENT_API ExecutionVerificationMode GetExecutionVerificationModeFromString(const char* pModeStr, ExecutionVerificationMode defaultMode);
 
 
 enum MinViableRegionRegistrationMode : uint8_t {
@@ -189,9 +189,9 @@ enum MinViableRegionRegistrationMode : uint8_t {
     MVRRM_PerpendicularDrag = 3,
 };
 
-MUJINCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode);
+MUJINPLANNINGCLIENT_API const char* GetMinViableRegionRegistrationModeString(MinViableRegionRegistrationMode mode);
 
-MUJINCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegistrationModeFromString(const char* pModeStr, MinViableRegionRegistrationMode defaultMode);
+MUJINPLANNINGCLIENT_API MinViableRegionRegistrationMode GetMinViableRegionRegistrationModeFromString(const char* pModeStr, MinViableRegionRegistrationMode defaultMode);
 
 } // end namespace mujin
 

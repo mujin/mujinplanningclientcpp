@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-include_directories(${MUJINCLIENT_INCLUDE_LOCAL_DIRS})
-link_directories(${MUJINCLIENT_LINK_DIRS})
+include_directories(${MUJINPLANNINGCLIENT_INCLUDE_LOCAL_DIRS})
+link_directories(${MUJINPLANNINGCLIENT_LINK_DIRS})
 
 remove_definitions("-DBOOST_ENABLE_ASSERT_HANDLER")
 
@@ -35,7 +35,7 @@ build_sample(mujinlistscenepks)
 build_sample(mujindeleteallscenes)
 build_sample(mujindeleteallitlprograms)
 if (libzmq_FOUND)
-  build_sample(mujinbinpickingtask)
+  build_sample(mujinmujinplanningclient)
   build_sample(mujinjog)
   build_sample(mujinupdategeometry)
   build_sample(mujinmovetoollinear)

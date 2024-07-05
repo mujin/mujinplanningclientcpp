@@ -1,7 +1,7 @@
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 
@@ -43,8 +43,8 @@ int main(int argc, char ** argv)
     const unsigned int controllerPort = opts["controller_port"].as<unsigned int>();
     const std::string controllerUsernamePass = opts["controller_username_password"].as<std::string>();
     const unsigned int binpickingTaskZmqPort = opts["binpicking_task_zmq_port"].as<unsigned int>();
-    const unsigned int binpickingTaskHeartbeatPort = opts["binpicking_task_heartbeat_port"].as<unsigned int>();
-    const std::string binpickingTaskScenePk = opts["binpicking_task_scenepk"].as<std::string>();
+    const unsigned int mujinPlanningClientHeartbeatPort = opts["binpicking_task_heartbeat_port"].as<unsigned int>();
+    const std::string mujinPlanningClientScenePk = opts["binpicking_task_scenepk"].as<std::string>();
     const std::string robotname = opts["robotname"].as<std::string>();
     const std::string testobjectname = opts["testobjectname"].as<std::string>();
 
@@ -52,10 +52,10 @@ int main(int argc, char ** argv)
     std::stringstream url_ss;
     url_ss << "http://"<< controllerIp << ":" << controllerPort;
     ControllerClientPtr controller = CreateControllerClient(controllerUsernamePass, url_ss.str());
-    SceneResourcePtr scene(new SceneResource(controller, binpickingTaskScenePk));
-    BinPickingTaskResourcePtr binpickingzmq = scene->GetOrCreateBinPickingTaskFromName_UTF8("binpickingtask1", "binpicking", TRO_EnableZMQ);
+    SceneResourcePtr scene(new SceneResource(controller, mujinPlanningClientScenePk));
+    MujinPlanningClientResourcePtr binpickingzmq = scene->GetOrCreateMujinPlanningClientFromName_UTF8("mujinplanningclient1", "binpicking", TRO_EnableZMQ);
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(2));
-    binpickingzmq->Initialize("", binpickingTaskZmqPort, binpickingTaskHeartbeatPort, zmqcontext);
+    binpickingzmq->Initialize("", binpickingTaskZmqPort, mujinPlanningClientHeartbeatPort, zmqcontext);
 
     Transform t;
     binpickingzmq->GetTransform(testobjectname,t);

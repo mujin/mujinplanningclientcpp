@@ -5,7 +5,7 @@
     example1: mujinupgrade --controller_hostname=yourhost --filename=software.bin
  */
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/program_options.hpp>
 #include <signal.h>

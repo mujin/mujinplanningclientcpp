@@ -11,19 +11,53 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-/** \file mujincontrollerclient.h
+/** \file mujinplanningclient.h
     \brief  Defines the public headers of the MUJIN Controller Client
  */
-#ifndef MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_H
-#define MUJIN_CONTROLLERCLIENT_BINPICKINGTASK_H
+#ifndef MUJIN_CONTROLLERCLIENT_MUJINPLANNINGCLIENT_H
+#define MUJIN_CONTROLLERCLIENT_MUJINPLANNINGCLIENT_H
 
-#include <mujincontrollerclient/mujincontrollerclient.h>
 #include <boost/thread.hpp>
+
+#include <mujinplanningclient/mujindefinitions.h>
+#include <mujinplanningclient/mujinexceptions.h>
+#include <mujinplanningclient/mujinjson.h>
 #ifdef MUJIN_USEZMQ
 #include "zmq.hpp"
 #endif
 
-namespace mujinclient {
+namespace mujinplanningclient {
+
+typedef mujin::Transform Transform;
+typedef double Real;
+
+enum TaskResourceOptions
+{
+    TRO_EnableZMQ=1, ///< create a task resource with zeromq client
+};
+
+struct SensorData {
+public:
+    bool operator!=(const SensorData& other) const {
+        return std::memcmp(distortion_coeffs, other.distortion_coeffs, 5 * sizeof(Real)) != 0 ||
+                distortion_model != other.distortion_model ||
+                focal_length != other.focal_length ||
+                std::memcmp(image_dimensions, other.image_dimensions, 3 * sizeof(int)) != 0 ||
+                std::memcmp(intrinsic, other.intrinsic, 6 * sizeof(Real)) != 0 ||
+                measurement_time != other.measurement_time ||
+                extra_parameters != other.extra_parameters;
+    }
+    bool operator==(const SensorData& other) const {
+        return !operator!=(other);
+    }
+    Real distortion_coeffs[5];
+    std::string distortion_model;
+    Real focal_length;
+    int image_dimensions[3];
+    Real intrinsic[6];
+    Real measurement_time;
+    std::vector<Real> extra_parameters;
+};
 
 /// Margins of the container to be cropped (or enlarged if negative), in order to define 3D container region under (calibration & shape) uncertainty - for pointcloud processing.
 struct CropContainerMarginsXYZXYZ
@@ -34,23 +68,14 @@ struct CropContainerMarginsXYZXYZ
 
 typedef boost::shared_ptr<CropContainerMarginsXYZXYZ> CropContainerMarginsXYZXYZPtr;
 
-class MUJINCLIENT_API BinPickingResultResource : public PlanningResultResource
+
+class MUJINPLANNINGCLIENT_API MujinPlanningClient
 {
 public:
-    BinPickingResultResource(ControllerClientPtr controller, const std::string& pk);
+    MujinPlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
+    virtual ~MujinPlanningClient();
 
-    ~BinPickingResultResource();
-
-    void GetResultJson(rapidjson::Document& pt) const;
-};
-
-class MUJINCLIENT_API BinPickingTaskResource : public TaskResource
-{
-public:
-    BinPickingTaskResource(ControllerClientPtr controller, const std::string& pk, const std::string& scenepk, const std::string& tasktype = "binpicking");
-    virtual ~BinPickingTaskResource();
-
-    struct MUJINCLIENT_API DetectedObject
+    struct MUJINPLANNINGCLIENT_API DetectedObject
     {
         std::string name;             // "name": "detectionresutl_1"
         std::string object_uri;       // "object_uri": "mujin:/box0.mujin.dae"
@@ -61,14 +86,14 @@ public:
         bool isPickable = false; ///< whether the object is pickable
     };
 
-    struct MUJINCLIENT_API PointCloudObstacle
+    struct MUJINPLANNINGCLIENT_API PointCloudObstacle
     {
         std::string name;
         std::vector<float> points; ///< consecutive x,y,z values in meter
         Real pointsize = 0; ///< size of each point in meter
     };
 
-    struct MUJINCLIENT_API SensorOcclusionCheck
+    struct MUJINPLANNINGCLIENT_API SensorOcclusionCheck
     {
         std::string bodyname; ///< name of body whose visibility is to be checked
         std::string cameraname; ///< name of camera
@@ -76,13 +101,13 @@ public:
         unsigned long long endtime = 0; ///< milisecond
     };
 
-    struct MUJINCLIENT_API ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultBase
     {
         virtual void Parse(const rapidjson::Value& pt) = 0;
     };
     typedef boost::shared_ptr<ResultBase> ResultBasePtr;
 
-    struct MUJINCLIENT_API AddPointOffsetInfo
+    struct MUJINPLANNINGCLIENT_API AddPointOffsetInfo
     {
         AddPointOffsetInfo() : zOffsetAtBottom(0), zOffsetAtTop(0) {
         }
@@ -91,7 +116,7 @@ public:
     };
     typedef boost::shared_ptr<AddPointOffsetInfo> AddPointOffsetInfoPtr;
 
-    struct MUJINCLIENT_API ResultGetJointValues : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultGetJointValues : public ResultBase
     {
         virtual ~ResultGetJointValues();
         void Parse(const rapidjson::Value& pt);
@@ -101,7 +126,7 @@ public:
         std::map<std::string, Transform> tools;
     };
 
-    struct MUJINCLIENT_API ResultMoveJoints : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultMoveJoints : public ResultBase
     {
         virtual ~ResultMoveJoints();
         void Parse(const rapidjson::Value& pt);
@@ -111,14 +136,14 @@ public:
         //Real elapsedtime;
     };
 
-    struct MUJINCLIENT_API ResultTransform : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultTransform : public ResultBase
     {
         virtual ~ResultTransform();
         void Parse(const rapidjson::Value& pt);
         Transform transform;
     };
 
-    struct MUJINCLIENT_API ResultComputeIkParamPosition : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultComputeIkParamPosition : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         std::vector<Real> translation;
@@ -132,7 +157,7 @@ public:
         Real angleZ = 0;
     };
 
-    struct MUJINCLIENT_API ResultComputeIKFromParameters : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultComputeIKFromParameters : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         std::vector<std::vector<Real> > dofvalues;
@@ -151,7 +176,7 @@ public:
         }
     };
 
-    struct MUJINCLIENT_API ResultGetBinpickingState : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultGetBinpickingState : public ResultBase
     {
         /// \brief holds published occlusion results of camera and container pairs
         struct OcclusionResult
@@ -261,28 +286,28 @@ public:
         CopyableRapidJsonDocument rUnitInfo; ///< the unitInfo struct that specifies what the units for the data in this struct are
     };
 
-    struct MUJINCLIENT_API ResultIsRobotOccludingBody : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultIsRobotOccludingBody : public ResultBase
     {
         virtual ~ResultIsRobotOccludingBody();
         void Parse(const rapidjson::Value& pt);
         bool result;
     };
 
-    struct MUJINCLIENT_API ResultGetPickedPositions : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultGetPickedPositions : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         std::vector<Transform> transforms;
         std::vector<unsigned long long> timestamps; // in millisecond
     };
 
-    struct MUJINCLIENT_API ResultAABB : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultAABB : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         std::array<double, 3> pos;
         std::array<double, 3> extents;
     };
 
-    struct MUJINCLIENT_API ResultOBB : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultOBB : public ResultBase
     {
         void Parse(const rapidjson::Value& pt);
         bool operator!=(const ResultOBB& other) const {
@@ -298,7 +323,7 @@ public:
         std::array<double, 3> extents;
     };
 
-    struct MUJINCLIENT_API ResultInstObjectInfo : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultInstObjectInfo : public ResultBase
     {
         virtual ~ResultInstObjectInfo();
         void Parse(const rapidjson::Value& pt);
@@ -309,7 +334,7 @@ public:
         rapidjson::Document rIkParams; ///< for every object, dict of serialized ikparams
     };
 
-    struct MUJINCLIENT_API ResultGetInstObjectAndSensorInfo : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultGetInstObjectAndSensorInfo : public ResultBase
     {
         virtual ~ResultGetInstObjectAndSensorInfo();
         void Parse(const rapidjson::Value& pt);
@@ -318,12 +343,12 @@ public:
         std::map<std::string, ResultOBB> minstobjectobb;
         std::map<std::string, ResultOBB> minstobjectinnerobb;
         std::map<mujin::SensorSelectionInfo, Transform> msensortransform;
-        std::map<mujin::SensorSelectionInfo, RobotResource::AttachedSensorResource::SensorData> msensordata;
+        std::map<mujin::SensorSelectionInfo, SensorData> msensordata;
         std::map<std::string, boost::shared_ptr<rapidjson::Document> > mrGeometryInfos; ///< for every object, list of all the geometry infos
         std::map<std::string, std::string> mObjectType;
     };
 
-    struct MUJINCLIENT_API ResultHeartBeat : public ResultBase
+    struct MUJINPLANNINGCLIENT_API ResultHeartBeat : public ResultBase
     {
         virtual ~ResultHeartBeat();
         void Parse(const rapidjson::Value& pt);
@@ -448,8 +473,6 @@ public:
         \param timeout seconds until this command times out
      */
     virtual void GetPickedPositions(ResultGetPickedPositions& result, const std::string& unit, const double timeout /* second */=5.0);
-
-    virtual PlanningResultResourcePtr GetResult();
 
     /** \brief Gets inst object and sensor info of existing objects in the scene
         \param unit input unit
@@ -613,21 +636,24 @@ protected:
     bool _bIsInitialized;
     bool _bShutdownHeartbeatMonitor;
 };
+typedef boost::shared_ptr<MujinPlanningClient> MujinPlanningClientPtr;
 
+class BinpickingTaskZmqResource;
 
+MUJINPLANNINGCLIENT_API MujinPlanningClientPtr CreatePlanningClient(const std::string& scenebasename, const std::string& tasktype, const std::string& baseuri, const std::string& userName);
 
 namespace utils {
-MUJINCLIENT_API std::string GetJsonString(const std::string& string);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<float>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<double>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<int>& vec);
-MUJINCLIENT_API std::string GetJsonString(const std::vector<std::string>& vec);
-MUJINCLIENT_API std::string GetJsonString(const Transform& transform);
-MUJINCLIENT_API std::string GetJsonString(const BinPickingTaskResource::DetectedObject& obj);
-MUJINCLIENT_API std::string GetJsonString(const BinPickingTaskResource::PointCloudObstacle& obj);
-MUJINCLIENT_API std::string GetJsonString(const BinPickingTaskResource::SensorOcclusionCheck& check);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& string);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<float>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<double>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<int>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::vector<std::string>& vec);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const Transform& transform);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const MujinPlanningClient::DetectedObject& obj);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const MujinPlanningClient::PointCloudObstacle& obj);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const MujinPlanningClient::SensorOcclusionCheck& check);
 template <typename T, size_t N>
-MUJINCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
 {
     std::stringstream ss;
     ss << std::setprecision(std::numeric_limits<T>::digits10+1);
@@ -642,30 +668,22 @@ MUJINCLIENT_API std::string GetJsonString(const std::array<T, N>& a)
     return ss.str();
 }
 
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const std::string& value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const int value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const unsigned long long value);
-MUJINCLIENT_API std::string GetJsonString(const std::string& key, const Real value);
-
-MUJINCLIENT_API void GetAttachedSensors(SceneResource& scene, const std::string& bodyname, std::vector<RobotResource::AttachedSensorResourcePtr>& result);
-MUJINCLIENT_API void GetSensorData(SceneResource& scene, const std::string& bodyname, const std::string& sensorname, RobotResource::AttachedSensorResource::SensorData& result);
-/** \brief Gets transform of attached sensor in sensor body frame
- */
-MUJINCLIENT_API void GetSensorTransform(SceneResource& scene, const std::string& bodyname, const std::string& sensorname, Transform& result, const std::string& unit);
-MUJINCLIENT_API void DeleteObject(SceneResource& scene, const std::string& name);
-
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const std::string& value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const int value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const unsigned long long value);
+MUJINPLANNINGCLIENT_API std::string GetJsonString(const std::string& key, const Real value);
 
 #ifdef MUJIN_USEZMQ
 /// \brief get heartbeat
 /// \param endopoint endpoint to get heartbeat from. looks like protocol://hostname:port (ex. tcp://localhost:11001)
 /// \return heartbeat as string
-MUJINCLIENT_API std::string GetHeartbeat(const std::string& endpoint);
+MUJINPLANNINGCLIENT_API std::string GetHeartbeat(const std::string& endpoint);
 
-MUJINCLIENT_API std::string GetScenePkFromHeartbeat(const std::string& heartbeat);
-MUJINCLIENT_API std::string GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat);
+MUJINPLANNINGCLIENT_API std::string GetScenePkFromHeartbeat(const std::string& heartbeat);
+MUJINPLANNINGCLIENT_API std::string GetSlaveRequestIdFromHeartbeat(const std::string& heartbeat);
 #endif
 } // namespace utils
 
-} // namespace mujinclient
+} // namespace mujinplanningclient
 
 #endif

@@ -13,7 +13,7 @@
 // limitations under the License.
 #include "common.h"
 
-namespace mujinclient {
+namespace mujinplanningclient {
 
 bool PairStringLengthCompare(const std::pair<std::string, std::string>&p0, const std::pair<std::string, std::string>&p1)
 {
@@ -133,4 +133,4 @@ void ConvertTimestampToFloat(const std::string& in,
     }
 }
 
-} // namespace mujinclient
+} // namespace mujinplanningclient

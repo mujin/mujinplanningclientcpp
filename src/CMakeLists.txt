@@ -17,16 +17,13 @@ if (libzmq_FOUND)
   include_directories(${libzmq_INCLUDE_DIRS})
 endif()
 
-link_directories(${MUJINCLIENT_LINK_DIRS})
+link_directories(${MUJINPLANNINGCLIENT_LINK_DIRS})
 
 set(SOURCE_FILES
   boost_assertion_failed.cpp
-  binpickingtask.cpp
+  mujinplanningclient.cpp
   common.cpp
   common.h
-  controllerclientimpl.cpp
-  controllerclientimpl.h
-  mujincontrollerclient.cpp
   mujindefinitions.cpp
   mujinjson.cpp
   utf8.h )
@@ -35,42 +32,42 @@ if (libzmq_FOUND)
   set(SOURCE_FILES ${SOURCE_FILES} binpickingtaskzmq.h binpickingtaskzmq.cpp mujinzmq.cpp)
 endif()
 
-add_library(libmujincontrollerclient SHARED ${SOURCE_FILES})
+add_library(libmujinplanningclient SHARED ${SOURCE_FILES})
 if( EXTRA_MSVC_DEPEND )
   message(STATUS "adding msvc_boost dependency")
-  add_dependencies(libmujincontrollerclient ${EXTRA_MSVC_DEPEND})
+  add_dependencies(libmujinplanningclient ${EXTRA_MSVC_DEPEND})
 endif()
-set_target_properties(libmujincontrollerclient PROPERTIES COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINCLIENT_DLL_EXPORTS -DMUJINCLIENT_DLL" LINK_FLAGS ""
-  OUTPUT_NAME mujincontrollerclient${MUJINCLIENT_LIBRARY_SUFFIX}
+set_target_properties(libmujinplanningclient PROPERTIES COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINPLANNINGCLIENT_DLL_EXPORTS -DMUJINPLANNINGCLIENT_DLL" LINK_FLAGS ""
+  OUTPUT_NAME mujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX}
   SOVERSION 0 # always have it 0 since we're including the soversion as part of the library name
-  VERSION ${MUJINCLIENT_VERSION}
+  VERSION ${MUJINPLANNINGCLIENT_VERSION}
   CLEAN_DIRECT_OUTPUT 1
   )
 
-target_link_libraries(libmujincontrollerclient ${CURL_LIBRARIES} ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY}  ${EXTRA_LIBRARIES} ${libzmq_LIBRARIES} ${LOG4CXX_LIBRARIES})
+target_link_libraries(libmujinplanningclient ${CURL_LIBRARIES} ${Boost_THREAD_LIBRARY} ${Boost_DATE_TIME_LIBRARY}  ${EXTRA_LIBRARIES} ${libzmq_LIBRARIES} ${LOG4CXX_LIBRARIES})
 if( MSVC )
-  install(TARGETS libmujincontrollerclient RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib${LIB_SUFFIX})
+  install(TARGETS libmujinplanningclient RUNTIME DESTINATION bin LIBRARY DESTINATION bin ARCHIVE DESTINATION lib${LIB_SUFFIX})
 else()
-  install(TARGETS libmujincontrollerclient DESTINATION lib${LIB_SUFFIX})
+  install(TARGETS libmujinplanningclient DESTINATION lib${LIB_SUFFIX})
 endif()
 
 if( OPT_BUILD_STATIC )
   # visual studio needs static lib built
   if( MSVC )
     # static version needs to have different name
-    set(LIBMUJINCONTROLLERCLIENT_NAME libmujincontrollerclient${MUJINCLIENT_LIBRARY_SUFFIX})
+    set(LIBMUJINPLANNINGCLIENT_NAME libmujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX})
   else()
-    set(LIBMUJINCONTROLLERCLIENT_NAME mujincontrollerclient${MUJINCLIENT_LIBRARY_SUFFIX})
+    set(LIBMUJINPLANNINGCLIENT_NAME mujinplanningclient${MUJINPLANNINGCLIENT_LIBRARY_SUFFIX})
   endif()
 
-  add_library(libmujincontrollerclient_static STATIC ${SOURCE_FILES})
-  set_target_properties(libmujincontrollerclient_static PROPERTIES OUTPUT_NAME ${LIBMUJINCONTROLLERCLIENT_NAME}
+  add_library(libmujinplanningclient_static STATIC ${SOURCE_FILES})
+  set_target_properties(libmujinplanningclient_static PROPERTIES OUTPUT_NAME ${LIBMUJINPLANNINGCLIENT_NAME}
                                            SOVERSION 0 # always have it 0 since we're including the soversion as part of the library name
-                                           VERSION ${MUJINCLIENT_VERSION}
+                                           VERSION ${MUJINPLANNINGCLIENT_VERSION}
                                            CLEAN_DIRECT_OUTPUT 1
-                                           COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINCLIENT_DLL_EXPORTS -DMUJINCLIENT_DLL"
+                                           COMPILE_FLAGS "${EXTRA_COMPILE_FLAGS} ${Boost_CFLAGS} -DMUJINPLANNINGCLIENT_DLL_EXPORTS -DMUJINPLANNINGCLIENT_DLL"
                                            LINK_FLAGS "")
   
-  target_link_libraries(libmujincontrollerclient_static ${CURL_LIBRARIES} ${EXTRA_LIBRARIES} ${libzmq_LIBRARIES} ${libzmq_LIBRARIES} ${LOG4CXX_LIBRARIES})
-  install(TARGETS libmujincontrollerclient_static DESTINATION lib${LIB_SUFFIX})
+  target_link_libraries(libmujinplanningclient_static ${CURL_LIBRARIES} ${EXTRA_LIBRARIES} ${libzmq_LIBRARIES} ${libzmq_LIBRARIES} ${LOG4CXX_LIBRARIES})
+  install(TARGETS libmujinplanningclient_static DESTINATION lib${LIB_SUFFIX})
 endif()

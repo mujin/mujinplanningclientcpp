@@ -1,6 +1,6 @@
 // -*- coding: utf-8 -*-
 // Copyright (C) 2012-2022 MUJIN Inc.
-#include <mujincontrollerclient/mujinjson.h>
+#include <mujinplanningclient/mujinjson.h>
 
 #include <fcntl.h>
 #include <sys/stat.h>

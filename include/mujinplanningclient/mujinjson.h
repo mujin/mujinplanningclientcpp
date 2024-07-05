@@ -40,7 +40,7 @@
 #include <rapidjson/error/en.h>
 #include <rapidjson/prettywriter.h>
 
-#include <mujincontrollerclient/config.h>
+#include <mujinplanningclient/config.h>
 
 #ifndef MUJINJSON_LOAD_REQUIRED_JSON_VALUE_BY_KEY
 #define MUJINJSON_LOAD_REQUIRED_JSON_VALUE_BY_KEY(rValue, key, param) \
@@ -217,7 +217,7 @@ inline void ParseJson(rapidjson::Value& r, rapidjson::Document::AllocatorType& a
 }
 
 template <typename Container>
-MUJINCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
+MUJINPLANNINGCLIENT_API void ParseJsonFile(rapidjson::Document& d, const char* filename, Container& buffer);
 
 inline void ParseJsonFile(rapidjson::Document& d, const char* filename)
 {

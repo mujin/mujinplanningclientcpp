@@ -3,18 +3,18 @@
 
     Shows how to import a scene and execute a task on a specific scene and get the results. If the scene does not exist, will import it first.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <boost/thread/thread.hpp> // for sleep
 
 #include <iostream>
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 int main(int argc, char ** argv)
 {
     if( argc < 2 ) {
-        std::cout << "need username:password. Example: mujinclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
+        std::cout << "need username:password. Example: mujinplanningclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
         return 1;
     }
     try {

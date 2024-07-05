@@ -1,7 +1,7 @@
-mujinclient_version=0.6.3
+mujinplanningclient_version=0.6.3
 doxycommands="STRIP_FROM_PATH = $(PWD)\\n\
-PROJECT_NUMBER = $(mujinclient_version)\\n\
-ALIASES += mujinclientversion=$(mujinclient_version)\\n\
+PROJECT_NUMBER = $(mujinplanningclient_version)\\n\
+ALIASES += mujinplanningclientversion=$(mujinplanningclient_version)\\n\
 "
 
 .PHONY: html_% html clean clean_doxygen
@@ -11,7 +11,7 @@ ALIASES += mujinclientversion=$(mujinclient_version)\\n\
 
 all: html_en
 
-../gh-pages/%/html/index.html: Doxyfile.html Doxyfile.% ../include/mujincontrollerclient/*.h ../samples/*.cpp mainpage.dox
+../gh-pages/%/html/index.html: Doxyfile.html Doxyfile.% ../include/mujinplanningclient/*.h ../samples/*.cpp mainpage.dox
 	rm -f doxygenhtml_installed_$*
 	mkdir -p build
 	echo "$(doxycommands)" | cat Doxyfile.html Doxyfile.$* - > build/Doxyfile.html.$*

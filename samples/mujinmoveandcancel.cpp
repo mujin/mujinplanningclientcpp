@@ -5,7 +5,7 @@
     example: mujinmoveandcancel --controller_hostname=yourhost --robotname=yourrobot --goals=0 90 30 40 50 0 # specify joint values
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 #include <signal.h>
 
@@ -14,7 +14,7 @@
 #endif // defined(_WIN32) || defined(_WIN64)
 
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
@@ -87,12 +87,12 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
     return true;
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
                     ControllerClientPtr& controllerclient,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["timeout"].as<double>();
@@ -148,9 +148,9 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initialzing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initialzing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
     s_robotname = opts["robotname"].as<string>();
     if (s_robotname.empty()) {
@@ -171,13 +171,13 @@ void InitializeTask(const bpo::variables_map& opts,
 
     
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 /// \brief convert state of bin picking task to string
 /// \param state state to convert to string
 /// \return state converted to string
-string ConvertStateToString(const BinPickingTaskResource::ResultGetBinpickingState& state)
+string ConvertStateToString(const MujinPlanningClientResource::ResultGetBinpickingState& state)
 {
     if (state.currentJointValues.empty() || state.currentToolValues.size() < 6) {
         stringstream ss;
@@ -212,14 +212,14 @@ string ConvertStateToString(const BinPickingTaskResource::ResultGetBinpickingSta
 /// \param robotname robot name
 /// \param toolname tool name
 /// \param checkcollision whether to move in line or not
-void MoveThread(BinPickingTaskResourcePtr& pTask,
+void MoveThread(MujinPlanningClientResourcePtr& pTask,
                 const vector<double>& goals,
                 const string& robotname,
                 double speed,
                 double timeout)
 {
     // print state
-    BinPickingTaskResource::ResultGetBinpickingState result;
+    MujinPlanningClientResource::ResultGetBinpickingState result;
     pTask->GetPublishedTaskState(result, robotname, "mm", 1.0);
     cout << "Starting:\n" << ConvertStateToString(result) << endl;
 
@@ -228,7 +228,7 @@ void MoveThread(BinPickingTaskResourcePtr& pTask,
         jointindices[i] = i;
     }
     // start moving
-    BinPickingTaskResource::ResultMoveJoints moveresult;
+    MujinPlanningClientResource::ResultMoveJoints moveresult;
     pTask->MoveJoints(goals, jointindices, 10, speed, moveresult, timeout);
 
     // print state
@@ -249,11 +249,11 @@ int main(int argc, char ** argv)
     const double timeout = opts["timeout"].as<double>();
 
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
     ControllerClientPtr controllerclient;
-    InitializeTask(opts, controllerclient, pBinpickingTask);
+    InitializeTask(opts, controllerclient, pMujinPlanningClient);
 
-    boost::thread movethread = boost::thread(&MoveThread, pBinpickingTask, goals, s_robotname, speed, timeout);
+    boost::thread movethread = boost::thread(&MoveThread, pMujinPlanningClient, goals, s_robotname, speed, timeout);
 
     signal(SIGINT,sigint_handler); // control C
     cout << "started to move. Ctrl-C to cancel" << endl;

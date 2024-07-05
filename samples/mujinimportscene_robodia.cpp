@@ -3,16 +3,16 @@
 
     Shows how to import a scene and query a list of the instance objects inside the scene. Note that querying only works for MUJIN COLLADA scenes.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <iostream>
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 int main(int argc, char ** argv)
 {
     if( argc < 2 ) {
-        std::cout << "need username:password. Example: mujinclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
+        std::cout << "need username:password. Example: mujinplanningclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
         return 1;
     }
     try {
@@ -31,8 +31,8 @@ int main(int argc, char ** argv)
         }
         std::cout << "connected to controller v" << controller->GetVersion() << std::endl;
 
-        //controller->SyncUpload_UTF16(L"c:\\controllerclientcpp\\ƒV[ƒ€ƒŒƒXƒeƒXƒg\\ƒV[ƒ€ƒŒƒXƒeƒXƒg.xml", L"mujin:/ƒV[ƒ€ƒŒƒXƒeƒXƒg/", "cecrobodiaxml");
-        controller->SyncUpload_UTF8("../share/mujincontrollerclient/robodia_demo1/robodia_demo1.xml", "mujin:/robodia_demo1/", "cecrobodiaxml");
+        //controller->SyncUpload_UTF16(L"c:\\controllerclientcpp\\ï¿½Vï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½eï¿½Xï¿½g\\ï¿½Vï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½eï¿½Xï¿½g.xml", L"mujin:/ï¿½Vï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½eï¿½Xï¿½g/", "cecrobodiaxml");
+        controller->SyncUpload_UTF8("../share/mujinplanningclient/robodia_demo1/robodia_demo1.xml", "mujin:/robodia_demo1/", "cecrobodiaxml");
 
         // try to import the scene, if it already exists delete it and import again
         std::string sceneuri = "mujin:/robodia_demo1.mujin.dae";

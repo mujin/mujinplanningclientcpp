@@ -3,18 +3,18 @@
 
     Shows how to get the result data data from an already generated task and optimization results.
  */
-#include <mujincontrollerclient/mujincontrollerclient.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 
 #include <iostream>
 #include <vector>
 
 using namespace std;
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 int main(int argc, char ** argv)
 {
     if( argc < 2 ) {
-        std::cout << "need username:password. Example: mujinclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
+        std::cout << "need username:password. Example: mujinplanningclienttest myuser:mypass [url]\n\nurl - [optional] For example https://controller.mujin.co.jp/" << std::endl;
         return 1;
     }
     try {

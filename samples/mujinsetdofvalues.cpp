@@ -5,7 +5,7 @@
     example: mujinsetdofvalues --controller_hostname localhost --task_scenepk machine.mujin.dae --destination -300 -1000 -2000 10 --taskparameters '{"robotname":"robot","objectName":"machine"}'
  */
 
-#include <mujincontrollerclient/binpickingtask.h>
+#include <mujinplanningclient/mujinplanningclient.h>
 #include <iostream>
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -13,7 +13,7 @@
 #endif // defined(_WIN32) || defined(_WIN64)
 
 
-using namespace mujinclient;
+using namespace mujinplanningclient;
 
 #include <boost/program_options.hpp>
 
@@ -76,12 +76,12 @@ bool ParseOptions(int argc, char ** argv, bpo::variables_map& opts)
     return true;
 }
 
-/// \brief initialize BinPickingTask and establish communication with controller
+/// \brief initialize MujinPlanningClient and establish communication with controller
 /// \param opts options parsed from command line
-/// \param pBinPickingTask bin picking task to be initialized
+/// \param pMujinPlanningClient bin picking task to be initialized
 void InitializeTask(const bpo::variables_map& opts,
                     boost::shared_ptr<zmq::context_t>& zmqcontext,
-                    BinPickingTaskResourcePtr& pBinpickingTask)
+                    MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string controllerUsernamePass = opts["controller_username_password"].as<string>();
     const double controllerCommandTimeout = opts["controller_command_timeout"].as<double>();
@@ -137,16 +137,16 @@ void InitializeTask(const bpo::variables_map& opts,
     SceneResourcePtr scene(new SceneResource(controllerclient, taskScenePk));
 
     // initialize binpicking task
-    pBinpickingTask = scene->GetOrCreateBinPickingTaskFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
+    pMujinPlanningClient = scene->GetOrCreateMujinPlanningClientFromName_UTF8(tasktype+string("task1"), tasktype, TRO_EnableZMQ);
     const string userinfo = "{\"username\": \"" + controllerclient->GetUserName() + "\", ""\"locale\": \"" + locale + "\"}";
-    cout << "initialzing binpickingtask with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
+    cout << "initialzing mujinplanningclient with userinfo=" + userinfo << " taskparameters=" << taskparameters << endl;
 
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 
 }
 
 void ReinitializeTask(boost::shared_ptr<zmq::context_t>& zmqcontext,
-                      BinPickingTaskResourcePtr& pBinpickingTask)
+                      MujinPlanningClientResourcePtr& pMujinPlanningClient)
 {
     const string taskparameters("{\"robotname\": \"robot\"}");
     const unsigned int taskZmqPort(11000);
@@ -154,7 +154,7 @@ void ReinitializeTask(boost::shared_ptr<zmq::context_t>& zmqcontext,
     const string userinfo("");
     const string slaverequestid("controller71_slave0");
     const unsigned int heartbeatPort(11001);
-    pBinpickingTask->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
+    pMujinPlanningClient->Initialize(taskparameters, taskZmqPort, heartbeatPort, zmqcontext, false, controllerCommandTimeout, controllerCommandTimeout, userinfo, slaverequestid);
 }
 
 int main(int argc, char ** argv)
@@ -167,14 +167,14 @@ int main(int argc, char ** argv)
     }
 
     // initializing
-    BinPickingTaskResourcePtr pBinpickingTask;
+    MujinPlanningClientResourcePtr pMujinPlanningClient;
     boost::shared_ptr<zmq::context_t> zmqcontext(new zmq::context_t(1));
-    InitializeTask(opts, zmqcontext, pBinpickingTask);
+    InitializeTask(opts, zmqcontext, pMujinPlanningClient);
 
     const double timeout = opts["controller_command_timeout"].as<double>();
     const string unit = opts["unit"].as<string>();
 
-    pBinpickingTask->SetInstantaneousJointValues(opts["destination"].as<vector<double> >(), unit, timeout);
+    pMujinPlanningClient->SetInstantaneousJointValues(opts["destination"].as<vector<double> >(), unit, timeout);
 
     return 0;
 }
